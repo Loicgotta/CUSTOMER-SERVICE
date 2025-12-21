@@ -53,6 +53,30 @@ app.post('/api/reports/send/:agentId', async (req, res) => {
   }
 });
 
+// Route pour récupérer les logs
+app.get('/api/logs', (req, res) => {
+  try {
+    const logs = Logger.getLogs();
+    res.json({
+      count: logs.length,
+      logs: logs
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur lors de la récupération des logs' });
+  }
+});
+
+// Route pour effacer les logs
+app.delete('/api/logs', (req, res) => {
+  try {
+    Logger.clearLogs();
+    Logger.info('Logs effacés depuis le dashboard');
+    res.json({ message: 'Logs effacés avec succès' });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur lors de l\'effacement des logs' });
+  }
+});
+
 // Démarrer le serveur
 app.listen(PORT, () => {
   Logger.success(`Serveur démarré sur le port ${PORT}`);
