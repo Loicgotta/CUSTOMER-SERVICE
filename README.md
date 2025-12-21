@@ -66,10 +66,20 @@ cd ..
 
 3. **Configurer les variables d'environnement**
 
-Le fichier `.env` est déjà configuré dans `backend/.env` avec :
-- La clé API OpenAI
-- L'URL du webhook pour les rapports
-- Le port du serveur (3001)
+Créez le fichier `.env` à partir du template :
+```bash
+cp backend/.env.example backend/.env
+```
+
+Puis éditez `backend/.env` et ajoutez votre clé API OpenAI :
+```bash
+nano backend/.env
+```
+
+Le fichier doit contenir :
+- `OPENAI_API_KEY` : Votre clé API OpenAI (obtenir sur https://platform.openai.com/account/api-keys)
+- `PORT` : Port du serveur (3001 par défaut)
+- `WEBHOOK_URL` : URL du webhook n8n pour les rapports
 
 4. **Créer le dossier data pour la base de données**
 ```bash
