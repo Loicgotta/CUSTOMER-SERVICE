@@ -1,6 +1,6 @@
 # 🤖 Plateforme de Chatbots Service Client
 
-Plateforme complète pour créer et gérer des chatbots de service client intelligents avec RAG (Retrieval Augmented Generation) et rapports quotidiens automatisés.
+Plateforme complète pour créer et gérer des chatbots de service client intelligents avec RAG (Retrieval Augmented Generation) et rapports par email à la demande.
 
 ## ✨ Fonctionnalités
 
@@ -118,7 +118,7 @@ L'interface démarre sur http://localhost:3000
 3. Remplissez le formulaire :
    - **Prompt** : Instructions pour le chatbot (ex: "Tu es un assistant service client pour une boutique en ligne...")
    - **Documentation** : Votre documentation produit, FAQ, etc. (sera indexée automatiquement)
-   - **Email** : Adresse email pour recevoir les rapports quotidiens
+   - **Email** : Adresse email pour recevoir les rapports (cliquez sur "Envoyer Rapport" quand vous le souhaitez)
 4. Cliquez sur **"Créer l'Agent"**
 
 ### 2. Intégrer le widget sur votre site
@@ -142,24 +142,27 @@ Copiez ce code et collez-le **juste avant la balise `</body>`** de votre site we
 
 Le widget apparaît en bas à droite de votre page. Cliquez dessus pour ouvrir le chat et tester !
 
-### 4. Rapports quotidiens
+### 4. Envoi de rapports
 
-Chaque jour à 18h00, le système :
-1. Génère automatiquement un résumé des conversations du jour
-2. Envoie ce résumé à l'email configuré via le webhook n8n
-3. Le rapport contient :
-   - Les principaux sujets abordés
-   - Les problèmes récurrents
-   - Les tendances importantes
+Pour envoyer un rapport par email :
 
-### 5. Envoi manuel d'un rapport
+**Méthode 1 : Via l'interface web (Recommandé)**
+1. Ouvrez http://localhost:3000
+2. Cliquez sur le bouton **"📧 Envoyer Rapport"** pour l'agent concerné
+3. Le rapport est généré et envoyé immédiatement à l'email configuré
 
-Pour tester l'envoi de rapport immédiatement :
-
+**Méthode 2 : Via l'API**
 ```bash
 curl -X POST http://localhost:3001/api/reports/send/1
 ```
 (Remplacez `1` par l'ID de votre agent)
+
+Le rapport contient :
+- Un résumé intelligent de toutes les conversations récentes (jusqu'à 100)
+- Les principaux sujets abordés
+- Les problèmes récurrents
+- Les tendances importantes
+- Des statistiques et insights
 
 ## 🔧 API Endpoints
 

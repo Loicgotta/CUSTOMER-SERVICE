@@ -93,17 +93,23 @@ Créez un fichier `test.html` :
 
 Ouvrez ce fichier dans votre navigateur et testez le chatbot !
 
-## Rapports quotidiens
+## Envoi de rapports
 
-Les rapports sont envoyés automatiquement à 18h chaque jour.
+Les rapports sont envoyés à la demande via un bouton dans l'interface.
 
-Pour tester immédiatement :
+**Pour envoyer un rapport :**
 
+1. **Via l'interface** (recommandé) :
+   - Ouvrez http://localhost:3000
+   - Cliquez sur **"📧 Envoyer Rapport"** pour l'agent souhaité
+   - Le rapport est généré et envoyé immédiatement à l'email configuré
+
+2. **Via l'API** :
 ```bash
 curl -X POST http://localhost:3001/api/reports/send/1
 ```
 
-Le rapport sera envoyé à l'email configuré via le webhook n8n.
+Le rapport contient un résumé intelligent de toutes les conversations récentes et sera envoyé via le webhook n8n.
 
 ## Configuration du webhook
 

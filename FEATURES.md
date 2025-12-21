@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-Cette plateforme permet de créer et gérer des chatbots de service client intelligents avec un système RAG (Retrieval Augmented Generation) et des rapports quotidiens automatisés.
+Cette plateforme permet de créer et gérer des chatbots de service client intelligents avec un système RAG (Retrieval Augmented Generation) et des rapports par email à la demande.
 
 ## ✨ Fonctionnalités Principales
 
@@ -11,7 +11,7 @@ Cette plateforme permet de créer et gérer des chatbots de service client intel
 #### Création d'agents personnalisés
 - **Prompt personnalisé** : Définissez le comportement et la personnalité de votre chatbot
 - **Documentation indexée** : Téléchargez votre documentation (FAQ, guides produits, etc.)
-- **Configuration email** : Recevez des rapports quotidiens sur l'activité
+- **Configuration email** : Recevez des rapports sur l'activité à la demande (bouton "Envoyer Rapport")
 
 #### Interface de gestion
 - Interface web moderne et intuitive (React)
@@ -59,24 +59,26 @@ Cette plateforme permet de créer et gérer des chatbots de service client intel
 <script src="http://localhost:3001/widget.js"></script>
 ```
 
-### 4. 📊 Rapports Quotidiens Automatisés
+### 4. 📊 Rapports à la Demande
 
-#### Génération automatique
-- **Horaire** : Tous les jours à 18h00
-- **Contenu** : Résumé intelligent des conversations de la journée
+#### Génération manuelle via bouton
+- **Interface** : Bouton "Envoyer Rapport" dans chaque carte d'agent
+- **Contenu** : Résumé intelligent de toutes les conversations récentes (jusqu'à 100)
 - **Intelligence** : Utilise GPT-4 pour analyser et résumer
+- **Logs complets** : Tous les détails des erreurs sont affichés dans les logs serveur
 
 #### Informations dans les rapports
 - Principaux sujets abordés
 - Problèmes récurrents
 - Tendances et insights
 - Volume de conversations
+- Statistiques détaillées
 
 #### Envoi via webhook
 - Intégration avec n8n
 - Format JSON structuré
 - Envoi à l'email configuré
-- Possibilité d'envoi manuel pour tests
+- Disponible via interface web ou API
 
 Format du webhook :
 ```json

@@ -10,7 +10,7 @@ function App() {
     documentation: '',
     email: ''
   });
-  const [selectedAgent, setSelectedAgent] = useState(null);
+  const [sendingReport, setSendingReport] = useState(null);
 
   // Charger les agents au démarrage
   useEffect(() => {
@@ -65,6 +65,29 @@ function App() {
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     alert('Code copié dans le presse-papier!');
+  };
+
+  const handleSendReport = async (agentId) => {
+    setSendingReport(agentId);
+    try {
+      const response = await axios.post(`/api/reports/send/${agentId}`);
+
+      if (response.data.success) {
+        alert(
+          `✅ Rapport envoyé avec succès!\n\n` +
+          `📧 Email: ${response.data.email}\n` +
+          `💬 Conversations: ${response.data.conversationCount || 'N/A'}`
+        );
+      } else {
+        alert(`⚠️ ${response.data.error || 'Erreur lors de l\'envoi'}`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi du rapport:', error);
+      const errorMsg = error.response?.data?.error || error.message;
+      alert(`❌ Erreur: ${errorMsg}`);
+    } finally {
+      setSendingReport(null);
+    }
   };
 
   return (
@@ -124,7 +147,7 @@ function App() {
                     setFormData({ ...formData, email: e.target.value })
                   }
                 />
-                <small>Vous recevrez un résumé quotidien des conversations à 18h</small>
+                <small>Cliquez sur "Envoyer Rapport" pour recevoir un résumé des conversations</small>
               </div>
 
               <button type="submit" className="btn btn-success">
@@ -154,6 +177,16 @@ function App() {
                   <strong>Prompt:</strong>
                   <p>{agent.prompt.substring(0, 100)}...</p>
                 </div>
+              </div>
+
+              <div className="report-section">
+                <button
+                  className="btn btn-report btn-sm"
+                  onClick={() => handleSendReport(agent.id)}
+                  disabled={sendingReport === agent.id}
+                >
+                  {sendingReport === agent.id ? '📨 Envoi en cours...' : '📧 Envoyer Rapport'}
+                </button>
               </div>
 
               <div className="widget-section">

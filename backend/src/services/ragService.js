@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import Embedding from '../models/Embedding.js';
+import Logger from '../utils/logger.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -31,7 +32,7 @@ class RAGService {
       });
       return response.data[0].embedding;
     } catch (error) {
-      console.error('Erreur lors de la création de l\'embedding:', error);
+      Logger.error('Erreur lors de la création de l\'embedding', error);
       throw error;
     }
   }
@@ -55,10 +56,10 @@ class RAGService {
         });
       }
 
-      console.log(`Documentation indexée pour l'agent ${agentId}: ${chunks.length} chunks`);
+      Logger.success(`Documentation indexée pour l'agent ${agentId}: ${chunks.length} chunks`);
       return chunks.length;
     } catch (error) {
-      console.error('Erreur lors de l\'indexation:', error);
+      Logger.error('Erreur lors de l\'indexation', error);
       throw error;
     }
   }
@@ -94,7 +95,7 @@ class RAGService {
       similarities.sort((a, b) => b.similarity - a.similarity);
       return similarities.slice(0, topK).map(s => s.chunkText);
     } catch (error) {
-      console.error('Erreur lors de la recherche:', error);
+      Logger.error('Erreur lors de la recherche', error);
       return [];
     }
   }

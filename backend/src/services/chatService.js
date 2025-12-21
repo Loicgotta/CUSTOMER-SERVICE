@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import Agent from '../models/Agent.js';
 import Conversation from '../models/Conversation.js';
 import RAGService from './ragService.js';
+import Logger from '../utils/logger.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -80,9 +81,10 @@ class ChatService {
         botResponse
       });
 
+      Logger.info(`Message traité avec succès - Agent: ${agentId}, Session: ${sessionId}`);
       return botResponse;
     } catch (error) {
-      console.error('Erreur lors du traitement du message:', error);
+      Logger.error(`Erreur lors du traitement du message - Agent: ${agentId}, Session: ${sessionId}`, error);
       throw error;
     }
   }
