@@ -36,6 +36,10 @@ class ChatService {
         });
       }
 
+      context += `\n\nInstructions de suivi:
+- Après avoir aidé un client et résolu son problème, demande-lui: "Est-ce que je peux faire autre chose pour vous?"
+- Si le client répond que tout est résolu (oui, c'est tout, non merci, etc.), demande-lui: "Comment avez-vous trouvé l'expérience?" pour collecter son feedback.`;
+
       // Construire les messages pour OpenAI
       const messages = [
         {
@@ -65,7 +69,7 @@ class ChatService {
 
       // Appeler OpenAI
       const response = await openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-4o',
         messages: messages,
         temperature: 0.7,
         max_tokens: 500

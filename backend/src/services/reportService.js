@@ -36,7 +36,7 @@ class ReportService {
 
       // Utiliser OpenAI pour extraire les statistiques
       const response = await openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -55,11 +55,19 @@ Tu dois retourner UNIQUEMENT un JSON valide avec ce format exact:
   }
 }
 
-Règles:
+Règles IMPORTANTES:
+- Analyse CHAQUE conversation individuellement pour identifier les sujets réellement abordés
+- NE PAS extrapoler ou inventer des sujets - reste strictement factuel
+- Un sujet doit être explicitement discuté dans la conversation pour être compté
 - Les pourcentages des sujets doivent totaliser 100%
-- Les pourcentages des sentiments doivent totaliser 100%
-- Identifie entre 3 et 7 sujets principaux
-- Analyse le sentiment de chaque message client (positif/négatif/neutre)
+- Identifie entre 3 et 7 sujets principaux uniquement si ces sujets sont réellement présents
+
+Pour les sentiments/avis:
+- Analyse le sentiment UNIQUEMENT si le client exprime clairement un avis (positif, négatif ou neutre)
+- NE PAS extrapoler les sentiments - si le client ne donne pas d'avis, ne pas en inventer
+- Si aucun avis n'est exprimé dans les conversations, mets tous les pourcentages à 0 et indique "Aucun avis exprimé"
+- Les pourcentages des sentiments doivent totaliser 100% (ou 0% si aucun avis)
+
 - Retourne UNIQUEMENT le JSON, sans texte avant ou après`
           },
           {
