@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test du Widget Chatbot</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 800px;
+      background: white;
+      border-radius: 16px;
+      padding: 3rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 1rem;
+      font-size: 2.5rem;
+    }
+
+    h1 span {
+      color: #667eea;
+    }
+
+    p {
+      color: #666;
+      line-height: 1.8;
+      margin-bottom: 1rem;
+      font-size: 1.125rem;
+    }
+
+    .highlight {
+      background: #f7fafc;
+      border-left: 4px solid #667eea;
+      padding: 1rem;
+      margin: 2rem 0;
+      border-radius: 8px;
+    }
+
+    .highlight strong {
+      color: #667eea;
+    }
+
+    ul {
+      list-style: none;
+      margin: 2rem 0;
+    }
+
+    li {
+      padding: 0.75rem 0;
+      color: #555;
+      font-size: 1.125rem;
+    }
+
+    li::before {
+      content: "✓";
+      color: #48bb78;
+      font-weight: bold;
+      margin-right: 0.75rem;
+      font-size: 1.25rem;
+    }
+
+    .footer {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 2px solid #e2e8f0;
+      text-align: center;
+      color: #999;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 2rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      p, li {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🤖 Test du Widget <span>Chatbot</span></h1>
+
+    <p>
+      Bienvenue sur la page de test du widget chatbot intelligent !
+      Le widget devrait apparaître en bas à droite de votre écran.
+    </p>
+
+    <div class="highlight">
+      <strong>👉 Regardez en bas à droite de votre écran</strong>
+      <p>Vous devriez voir un bouton de chat violet. Cliquez dessus pour ouvrir le chatbot !</p>
+    </div>
+
+    <h2>Fonctionnalités :</h2>
+    <ul>
+      <li>Réponses intelligentes basées sur la documentation fournie</li>
+      <li>Système RAG pour des réponses précises et contextuelles</li>
+      <li>Historique de conversation persistant</li>
+      <li>Interface moderne et responsive</li>
+      <li>Intégration facile sur n'importe quel site web</li>
+    </ul>
+
+    <p>
+      Le chatbot utilise GPT-4 et un système de Retrieval Augmented Generation (RAG)
+      pour fournir des réponses précises basées sur votre documentation.
+    </p>
+
+    <p>
+      Posez des questions au chatbot sur votre produit ou service, et il répondra
+      en s'appuyant sur la documentation que vous avez indexée lors de la création de l'agent.
+    </p>
+
+    <div class="footer">
+      <p>Plateforme de Chatbots Service Client</p>
+      <p>Développé avec ❤️ pour améliorer votre service client</p>
+    </div>
+  </div>
+
+  <!-- Widget Chatbot - Changez l'agentId selon votre configuration -->
+  <script>
+    window.chatbotConfig = {
+      agentId: 1,  // ID de votre agent (changez si nécessaire)
+      apiUrl: 'http://localhost:3001'
+    };
+  </script>
+  <script src="http://localhost:3001/widget.js"></script>
+</body>
+</html>
