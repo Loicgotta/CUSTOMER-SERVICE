@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: chatbot-backend
+    env: node
+    region: oregon
+    buildCommand: yarn install && yarn build
+    startCommand: yarn start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: OPENAI_API_KEY
+        sync: false  # À configurer manuellement dans le dashboard Render
+      - key: WEBHOOK_URL
+        value: https://n8n.srv793731.hstgr.cloud/webhook/mail-rapport
