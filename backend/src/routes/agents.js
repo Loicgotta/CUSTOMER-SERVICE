@@ -18,7 +18,18 @@ router.post('/', async (req, res) => {
 
     // Indexer la documentation si elle existe
     if (documentation) {
-      await RAGService.indexDocumentation(agentId, documentation);
+      try {
+        await RAGService.indexDocumentation(agentId, documentation);
+      } catch (ragError) {
+        console.error('Erreur lors de l\'indexation RAG:', ragError);
+        // L'agent est créé mais la documentation n'est pas indexée
+        return res.status(201).json({
+          id: agentId,
+          message: 'Agent créé mais erreur lors de l\'indexation de la documentation',
+          warning: ragError.message,
+          agent: Agent.findById(agentId)
+        });
+      }
     }
 
     res.status(201).json({
@@ -28,7 +39,11 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Erreur lors de la création de l\'agent:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({
+      error: 'Erreur serveur',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -76,7 +91,16 @@ router.put('/:id', async (req, res) => {
 
     // Ré-indexer la documentation si elle a changé
     if (documentation !== undefined) {
-      await RAGService.indexDocumentation(agentId, documentation);
+      try {
+        await RAGService.indexDocumentation(agentId, documentation);
+      } catch (ragError) {
+        console.error('Erreur lors de la ré-indexation RAG:', ragError);
+        return res.status(200).json({
+          message: 'Agent mis à jour mais erreur lors de l\'indexation',
+          warning: ragError.message,
+          agent: Agent.findById(agentId)
+        });
+      }
     }
 
     res.json({
@@ -85,7 +109,10 @@ router.put('/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Erreur lors de la mise à jour de l\'agent:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({
+      error: 'Erreur serveur',
+      details: error.message
+    });
   }
 });
 

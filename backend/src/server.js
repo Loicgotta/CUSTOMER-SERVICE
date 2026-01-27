@@ -12,6 +12,13 @@ import './database/db.js'; // Initialiser la DB
 
 dotenv.config();
 
+// Vérifier les variables d'environnement requises
+if (!process.env.OPENAI_API_KEY) {
+  console.error('❌ ERREUR: OPENAI_API_KEY manquante dans les variables d\'environnement');
+  console.error('⚠️  L\'application va démarrer mais les fonctionnalités IA ne fonctionneront pas');
+  console.error('💡 Ajoutez OPENAI_API_KEY dans votre fichier .env ou dans les variables d\'environnement Render');
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
