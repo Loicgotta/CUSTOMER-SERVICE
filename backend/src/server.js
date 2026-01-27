@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import agentsRouter from './routes/agents.js';
 import chatRouter from './routes/chat.js';
 import ReportService from './services/reportService.js';
@@ -9,6 +11,9 @@ import Logger from './utils/logger.js';
 import './database/db.js'; // Initialiser la DB
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -21,14 +26,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Servir les fichiers statiques (widget)
 app.use(express.static('public'));
 
-// Routes
+// Servir le frontend React (fichiers buildés)
+const frontendPath = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendPath));
+
+// Routes API
 app.use('/api/agents', agentsRouter);
 app.use('/api/chat', chatRouter);
-
-// Route de test
-app.get('/', (req, res) => {
-  res.json({ message: 'API Chatbot Platform - Running' });
-});
 
 // Route pour envoyer manuellement un rapport
 app.post('/api/reports/send/:agentId', async (req, res) => {
@@ -75,6 +79,11 @@ app.delete('/api/logs', (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Erreur lors de l\'effacement des logs' });
   }
+});
+
+// Catch-all pour servir le frontend React (doit être après toutes les routes API)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // Démarrer le serveur

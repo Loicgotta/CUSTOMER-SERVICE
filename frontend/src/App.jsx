@@ -86,14 +86,15 @@ function App() {
   };
 
   const generateWidgetCode = (agentId) => {
+    const baseUrl = window.location.origin;
     return `<!-- Widget Chatbot -->
 <script>
   window.chatbotConfig = {
     agentId: ${agentId},
-    apiUrl: 'http://localhost:3001'
+    apiUrl: '${baseUrl}'
   };
 </script>
-<script src="http://localhost:3001/widget.js"></script>`;
+<script src="${baseUrl}/widget.js"></script>`;
   };
 
   const copyToClipboard = (text) => {
