@@ -1,11 +1,19 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = new Database(path.join(__dirname, '../../data/chatbot.db'));
+// Créer le répertoire data s'il n'existe pas
+const dataDir = path.join(__dirname, '../../data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+  console.log('Data directory created');
+}
+
+const db = new Database(path.join(dataDir, 'chatbot.db'));
 
 // Créer les tables
 db.exec(`
