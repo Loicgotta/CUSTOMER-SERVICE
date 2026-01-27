@@ -13,6 +13,17 @@ function App() {
   const [sendingReport, setSendingReport] = useState(null);
   const [logs, setLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  // Auto-dismiss notification après 5 secondes
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   // Charger les agents au démarrage
   useEffect(() => {
@@ -52,10 +63,10 @@ function App() {
       try {
         await axios.delete('/api/logs');
         setLogs([]);
-        alert('Logs effacés avec succès');
+        setNotification({ type: 'success', message: 'Logs effacés avec succès' });
       } catch (error) {
         console.error('Erreur lors de l\'effacement des logs:', error);
-        alert('Erreur lors de l\'effacement des logs');
+        setNotification({ type: 'error', message: 'Erreur lors de l\'effacement des logs' });
       }
     }
   };
@@ -63,14 +74,23 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/agents', formData);
+      const response = await axios.post('/api/agents', formData);
       setFormData({ prompt: '', documentation: '', email: '' });
       setShowForm(false);
       loadAgents();
-      alert('Agent créé avec succès!');
+
+      if (response.data.warning) {
+        setNotification({
+          type: 'warning',
+          message: `Agent créé avec avertissement: ${response.data.warning}`
+        });
+      } else {
+        setNotification({ type: 'success', message: 'Agent créé avec succès!' });
+      }
     } catch (error) {
       console.error('Erreur lors de la création de l\'agent:', error);
-      alert('Erreur lors de la création de l\'agent');
+      const errorMsg = error.response?.data?.details || error.message || 'Erreur lors de la création de l\'agent';
+      setNotification({ type: 'error', message: `Erreur: ${errorMsg}` });
     }
   };
 
@@ -99,7 +119,7 @@ function App() {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    alert('Code copié dans le presse-papier!');
+    setNotification({ type: 'success', message: 'Code copié dans le presse-papier!' });
   };
 
   const handleSendReport = async (agentId) => {
@@ -108,18 +128,20 @@ function App() {
       const response = await axios.post(`/api/reports/send/${agentId}`);
 
       if (response.data.success) {
-        alert(
-          `✅ Rapport envoyé avec succès!\n\n` +
-          `📧 Email: ${response.data.email}\n` +
-          `💬 Conversations: ${response.data.conversationCount || 'N/A'}`
-        );
+        setNotification({
+          type: 'success',
+          message: `Rapport envoyé avec succès à ${response.data.email} (${response.data.conversationCount || 'N/A'} conversations)`
+        });
       } else {
-        alert(`⚠️ ${response.data.error || 'Erreur lors de l\'envoi'}`);
+        setNotification({
+          type: 'error',
+          message: response.data.error || 'Erreur lors de l\'envoi'
+        });
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi du rapport:', error);
       const errorMsg = error.response?.data?.error || error.message;
-      alert(`❌ Erreur: ${errorMsg}`);
+      setNotification({ type: 'error', message: `Erreur: ${errorMsg}` });
     } finally {
       setSendingReport(null);
     }
@@ -147,6 +169,25 @@ function App() {
             {showLogs ? '📊 Masquer Logs' : '📊 Voir Logs Serveur'}
           </button>
         </div>
+
+        {notification && (
+          <div className={`notification notification-${notification.type}`}>
+            <div className="notification-content">
+              <span className="notification-icon">
+                {notification.type === 'success' && '✅'}
+                {notification.type === 'error' && '❌'}
+                {notification.type === 'warning' && '⚠️'}
+              </span>
+              <span className="notification-message">{notification.message}</span>
+              <button
+                className="notification-close"
+                onClick={() => setNotification(null)}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
 
         {showForm && (
           <div className="form-card">
