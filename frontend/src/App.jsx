@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './App.css';
 
@@ -14,6 +14,14 @@ function App() {
   const [logs, setLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(false);
   const [notification, setNotification] = useState(null);
+
+  // Chat de test
+  const [testingAgent, setTestingAgent] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatSessionId] = useState(() => crypto.randomUUID());
+  const messagesEndRef = useRef(null);
 
   // Auto-dismiss notification après 5 secondes
   useEffect(() => {
@@ -122,6 +130,46 @@ function App() {
     setNotification({ type: 'success', message: 'Code copié dans le presse-papier!' });
   };
 
+  // Auto-scroll vers le dernier message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, chatLoading]);
+
+  const openTestChat = (agent) => {
+    setTestingAgent(agent);
+    setChatMessages([{ role: 'bot', content: `Bonjour ! Je suis l'agent #${agent.id}. Comment puis-je vous aider aujourd'hui ?` }]);
+    setChatInput('');
+  };
+
+  const closeTestChat = () => {
+    setTestingAgent(null);
+    setChatMessages([]);
+    setChatInput('');
+  };
+
+  const sendTestMessage = async () => {
+    const message = chatInput.trim();
+    if (!message || chatLoading) return;
+
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', content: message }]);
+    setChatLoading(true);
+
+    try {
+      const response = await axios.post('/api/chat/message', {
+        agentId: testingAgent.id,
+        sessionId: chatSessionId,
+        message
+      });
+      setChatMessages(prev => [...prev, { role: 'bot', content: response.data.response }]);
+    } catch (error) {
+      const errorMsg = error.response?.data?.details || error.message || 'Erreur lors de la communication';
+      setChatMessages(prev => [...prev, { role: 'bot', content: `Erreur : ${errorMsg}`, isError: true }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   const handleSendReport = async (agentId) => {
     setSendingReport(agentId);
     try {
@@ -147,6 +195,62 @@ function App() {
     }
   };
 
+  // --- Vue Chat de Test ---
+  if (testingAgent) {
+    return (
+      <div className="app">
+        <div className="chat-page">
+          <div className="chat-page-header">
+            <button className="chat-back-btn" onClick={closeTestChat}>← Retour</button>
+            <div className="chat-page-title">
+              <h2>Test Agent #{testingAgent.id}</h2>
+              <span className="chat-page-email">{testingAgent.email}</span>
+            </div>
+          </div>
+
+          <div className="chat-messages">
+            {chatMessages.map((msg, i) => (
+              <div key={i} className={`chat-msg chat-msg-${msg.role}${msg.isError ? ' chat-msg-error' : ''}`}>
+                <div className="chat-msg-bubble">{msg.content}</div>
+              </div>
+            ))}
+            {chatLoading && (
+              <div className="chat-msg chat-msg-bot">
+                <div className="chat-msg-bubble chat-msg-loading">
+                  <span className="chat-dot"></span>
+                  <span className="chat-dot"></span>
+                  <span className="chat-dot"></span>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="chat-input-area">
+            <input
+              type="text"
+              className="chat-input"
+              placeholder="Tapez votre message..."
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendTestMessage()}
+              disabled={chatLoading}
+              autoFocus
+            />
+            <button
+              className="chat-send-btn"
+              onClick={sendTestMessage}
+              disabled={chatLoading || !chatInput.trim()}
+            >
+              Envoyer
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Vue Dashboard ---
   return (
     <div className="app">
       <header className="header">
@@ -310,6 +414,12 @@ function App() {
               </div>
 
               <div className="report-section">
+                <button
+                  className="btn btn-test btn-sm"
+                  onClick={() => openTestChat(agent)}
+                >
+                  💬 Tester le Chatbot
+                </button>
                 <button
                   className="btn btn-report btn-sm"
                   onClick={() => handleSendReport(agent.id)}
