@@ -685,6 +685,78 @@
   color: #2d3748;
 }
 
+/* Upload de fichier documentation */
+.file-upload-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.file-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background: #edf2f7;
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+  color: #4a5568;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-upload-btn:hover {
+  background: #e2e8f0;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.file-name-display {
+  font-size: 0.85rem;
+  color: #48bb78;
+  font-weight: 600;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.or-divider {
+  text-align: center;
+  color: #a0aec0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+  position: relative;
+}
+
+.or-divider::before,
+.or-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.or-divider::before { right: 55%; }
+.or-divider::after { left: 55%; }
+
 /* Sélecteur de couleur widget */
 .color-picker {
   display: flex;

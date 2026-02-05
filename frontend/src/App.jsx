@@ -29,6 +29,7 @@ function App() {
   const [logs, setLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [uploadedFileName, setUploadedFileName] = useState('');
 
   // Modal rapport
   const [reportModalAgent, setReportModalAgent] = useState(null);
@@ -108,6 +109,7 @@ function App() {
     try {
       const response = await axios.post('/api/agents', formData);
       setFormData({ prompt: '', documentation: '', email: '', color: '#667eea' });
+      setUploadedFileName('');
       setShowForm(false);
       loadAgents();
 
@@ -124,6 +126,21 @@ function App() {
       const errorMsg = error.response?.data?.details || error.message || 'Erreur lors de la création de l\'agent';
       setNotification({ type: 'error', message: `Erreur: ${errorMsg}` });
     }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFormData(prev => ({ ...prev, documentation: event.target.result }));
+      setUploadedFileName(file.name);
+    };
+    reader.onerror = () => {
+      setNotification({ type: 'error', message: 'Erreur lors de la lecture du fichier' });
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   const handleDelete = async (id) => {
@@ -352,13 +369,31 @@ function App() {
 
               <div className="form-group">
                 <label>Documentation (optionnel)</label>
+                <div className="file-upload-wrapper">
+                  <input
+                    type="file"
+                    id="doc-file-input"
+                    accept=".txt,.md,.csv,.json"
+                    className="file-input-hidden"
+                    onChange={handleFileUpload}
+                  />
+                  <label htmlFor="doc-file-input" className="file-upload-btn">
+                    📁 Choisir un fichier
+                  </label>
+                  {uploadedFileName && (
+                    <span className="file-name-display">{uploadedFileName}</span>
+                  )}
+                </div>
+                <small>Formats supportés : .txt, .md, .csv, .json</small>
+                <div className="or-divider">ou</div>
                 <textarea
                   rows="6"
                   placeholder="Collez ici votre documentation produit, FAQ, etc. Elle sera indexée et utilisée par l'agent pour répondre aux questions."
                   value={formData.documentation}
-                  onChange={(e) =>
-                    setFormData({ ...formData, documentation: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormData({ ...formData, documentation: e.target.value });
+                    setUploadedFileName('');
+                  }}
                 />
               </div>
 
