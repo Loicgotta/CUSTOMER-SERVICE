@@ -2,13 +2,28 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './App.css';
 
+const WIDGET_COLORS = [
+  { name: 'Violet (par défaut)', value: '#667eea' },
+  { name: 'Noir', value: '#2d3748' },
+  { name: 'Vert', value: '#48bb78' },
+  { name: 'Beige', value: '#d4a574' },
+  { name: 'Bleu', value: '#4299e1' },
+  { name: 'Rouge', value: '#e53e3e' },
+  { name: 'Marron', value: '#7b5a3c' },
+  { name: 'Orange', value: '#ed8936' },
+  { name: 'Orange sombre', value: '#c05621' },
+  { name: 'Jaune clair', value: '#f6e05e' },
+  { name: 'Jaune foncé', value: '#d69e2e' }
+];
+
 function App() {
   const [agents, setAgents] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     prompt: '',
     documentation: '',
-    email: ''
+    email: '',
+    color: '#667eea'
   });
   const [sendingReport, setSendingReport] = useState(null);
   const [logs, setLogs] = useState([]);
@@ -92,7 +107,7 @@ function App() {
     e.preventDefault();
     try {
       const response = await axios.post('/api/agents', formData);
-      setFormData({ prompt: '', documentation: '', email: '' });
+      setFormData({ prompt: '', documentation: '', email: '', color: '#667eea' });
       setShowForm(false);
       loadAgents();
 
@@ -122,13 +137,14 @@ function App() {
     }
   };
 
-  const generateWidgetCode = (agentId) => {
+  const generateWidgetCode = (agentId, widgetColor) => {
     const baseUrl = window.location.origin;
     return `<!-- Widget Chatbot -->
 <script>
   window.chatbotConfig = {
     agentId: ${agentId},
-    apiUrl: '${baseUrl}'
+    apiUrl: '${baseUrl}',
+    widgetColor: '${widgetColor || '#667eea'}'
   };
 </script>
 <script src="${baseUrl}/widget.js"></script>`;
@@ -360,6 +376,22 @@ function App() {
                 <small>Cliquez sur "Envoyer Rapport" pour recevoir un résumé des conversations</small>
               </div>
 
+              <div className="form-group">
+                <label>Couleur du widget</label>
+                <div className="color-picker">
+                  {WIDGET_COLORS.map(c => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      className={`color-swatch${formData.color === c.value ? ' selected' : ''}`}
+                      style={{ backgroundColor: c.value }}
+                      title={c.name}
+                      onClick={() => setFormData({ ...formData, color: c.value })}
+                    />
+                  ))}
+                </div>
+              </div>
+
               <button type="submit" className="btn btn-success">
                 Créer l'Agent
               </button>
@@ -419,7 +451,7 @@ function App() {
           {agents.map((agent) => (
             <div key={agent.id} className="agent-card">
               <div className="agent-header">
-                <h3>Agent #{agent.id}</h3>
+                <h3><span className="agent-color-dot" style={{ backgroundColor: agent.widget_color || '#667eea' }}></span>Agent #{agent.id}</h3>
                 <button
                   className="btn btn-danger btn-sm"
                   onClick={() => handleDelete(agent.id)}
@@ -455,11 +487,11 @@ function App() {
               <div className="widget-section">
                 <h4>Code du Widget</h4>
                 <div className="code-box">
-                  <pre>{generateWidgetCode(agent.id)}</pre>
+                  <pre>{generateWidgetCode(agent.id, agent.widget_color)}</pre>
                 </div>
                 <button
                   className="btn btn-secondary btn-sm"
-                  onClick={() => copyToClipboard(generateWidgetCode(agent.id))}
+                  onClick={() => copyToClipboard(generateWidgetCode(agent.id, agent.widget_color))}
                 >
                   📋 Copier le Code
                 </button>

@@ -55,6 +55,13 @@ db.exec(`
   );
 `);
 
+// Migration : ajouter widget_color si absent
+try {
+  db.exec("ALTER TABLE agents ADD COLUMN widget_color TEXT DEFAULT '#667eea'");
+} catch (e) {
+  // Colonne déjà existe
+}
+
 console.log('Database initialized successfully');
 
 export default db;

@@ -7,14 +7,14 @@ const router = express.Router();
 // Créer un nouvel agent
 router.post('/', async (req, res) => {
   try {
-    const { prompt, documentation, email } = req.body;
+    const { prompt, documentation, email, color } = req.body;
 
     if (!prompt || !email) {
       return res.status(400).json({ error: 'Prompt et email sont requis' });
     }
 
     // Créer l'agent
-    const agentId = Agent.create({ prompt, documentation: documentation || '', email });
+    const agentId = Agent.create({ prompt, documentation: documentation || '', email, color });
 
     // Indexer la documentation si elle existe
     if (documentation) {
@@ -75,7 +75,7 @@ router.get('/:id', (req, res) => {
 // Mettre à jour un agent
 router.put('/:id', async (req, res) => {
   try {
-    const { prompt, documentation, email } = req.body;
+    const { prompt, documentation, email, color } = req.body;
     const agentId = req.params.id;
 
     const agent = Agent.findById(agentId);
@@ -86,7 +86,8 @@ router.put('/:id', async (req, res) => {
     Agent.update(agentId, {
       prompt: prompt || agent.prompt,
       documentation: documentation !== undefined ? documentation : agent.documentation,
-      email: email || agent.email
+      email: email || agent.email,
+      color: color || agent.widget_color
     });
 
     // Ré-indexer la documentation si elle a changé

@@ -10,6 +10,26 @@
   let sessionId = null;
   let isOpen = false;
 
+  // Fonctions utilitaires couleur
+  function darkenHex(hex, amount) {
+    var r = Math.max(0, parseInt(hex.slice(1, 3), 16) - amount);
+    var g = Math.max(0, parseInt(hex.slice(3, 5), 16) - amount);
+    var b = Math.max(0, parseInt(hex.slice(5, 7), 16) - amount);
+    var toH = function(n) { var s = n.toString(16); return s.length === 1 ? '0' + s : s; };
+    return '#' + toH(r) + toH(g) + toH(b);
+  }
+
+  function hexToRgba(hex, alpha) {
+    return 'rgba(' + parseInt(hex.slice(1,3),16) + ',' + parseInt(hex.slice(3,5),16) + ',' + parseInt(hex.slice(5,7),16) + ',' + alpha + ')';
+  }
+
+  var widgetColor = config.widgetColor || '#667eea';
+  var widgetColorDark = darkenHex(widgetColor, 40);
+  var widgetTextColor = (0.299 * parseInt(widgetColor.slice(1,3),16) + 0.587 * parseInt(widgetColor.slice(3,5),16) + 0.114 * parseInt(widgetColor.slice(5,7),16)) / 255 > 0.5 ? '#2d3748' : '#ffffff';
+  var widgetShadow = hexToRgba(widgetColor, 0.4);
+  var widgetShadowStrong = hexToRgba(widgetColor, 0.6);
+  var widgetGradient = 'linear-gradient(135deg, ' + widgetColor + ' 0%, ' + widgetColorDark + ' 100%)';
+
   // Générer un UUID simple pour la session
   function generateUUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -34,10 +54,10 @@
         width: 60px;
         height: 60px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: ${widgetGradient};
         border: none;
         cursor: pointer;
-        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 4px 20px ${widgetShadow};
         display: flex;
         align-items: center;
         justify-content: center;
@@ -46,13 +66,13 @@
 
       #chatbot-button:hover {
         transform: scale(1.1);
-        box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+        box-shadow: 0 6px 30px ${widgetShadowStrong};
       }
 
       #chatbot-button svg {
         width: 30px;
         height: 30px;
-        fill: white;
+        fill: ${widgetTextColor};
       }
 
       #chatbot-window {
@@ -74,8 +94,8 @@
       }
 
       #chatbot-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: ${widgetGradient};
+        color: ${widgetTextColor};
         padding: 1rem;
         display: flex;
         justify-content: space-between;
@@ -91,7 +111,7 @@
       #chatbot-close {
         background: transparent;
         border: none;
-        color: white;
+        color: ${widgetTextColor};
         font-size: 1.5rem;
         cursor: pointer;
         padding: 0;
@@ -138,8 +158,8 @@
       }
 
       .chatbot-message.user .chatbot-message-content {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: ${widgetGradient};
+        color: ${widgetTextColor};
       }
 
       #chatbot-input-area {
@@ -161,13 +181,13 @@
       }
 
       #chatbot-input:focus {
-        border-color: #667eea;
+        border-color: ${widgetColor};
       }
 
       #chatbot-send {
         padding: 0.75rem 1.25rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: ${widgetGradient};
+        color: ${widgetTextColor};
         border: none;
         border-radius: 8px;
         cursor: pointer;
@@ -189,7 +209,7 @@
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: #667eea;
+        background: ${widgetColor};
         animation: chatbot-pulse 1.4s infinite ease-in-out both;
       }
 

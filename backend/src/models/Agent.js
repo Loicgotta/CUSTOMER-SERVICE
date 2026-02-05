@@ -1,12 +1,12 @@
 import db from '../database/db.js';
 
 class Agent {
-  static create({ prompt, documentation, email }) {
+  static create({ prompt, documentation, email, color }) {
     const stmt = db.prepare(`
-      INSERT INTO agents (prompt, documentation, email)
-      VALUES (?, ?, ?)
+      INSERT INTO agents (prompt, documentation, email, widget_color)
+      VALUES (?, ?, ?, ?)
     `);
-    const result = stmt.run(prompt, documentation, email);
+    const result = stmt.run(prompt, documentation, email, color || '#667eea');
     return result.lastInsertRowid;
   }
 
@@ -20,13 +20,13 @@ class Agent {
     return stmt.all();
   }
 
-  static update(id, { prompt, documentation, email }) {
+  static update(id, { prompt, documentation, email, color }) {
     const stmt = db.prepare(`
       UPDATE agents
-      SET prompt = ?, documentation = ?, email = ?
+      SET prompt = ?, documentation = ?, email = ?, widget_color = ?
       WHERE id = ?
     `);
-    return stmt.run(prompt, documentation, email, id);
+    return stmt.run(prompt, documentation, email, color || '#667eea', id);
   }
 
   static delete(id) {
