@@ -12,12 +12,17 @@ const openai = new OpenAI({
 });
 
 class ReportService {
-  static async generateSummary(agentId, limit = 100) {
+  static async generateSummary(agentId, { startDate, endDate, preferences } = {}) {
     try {
-      Logger.info(`Génération du rapport statistique pour l'agent ${agentId}`);
+      Logger.info(`Génération du rapport pour l'agent ${agentId} | Dates: ${startDate || 'toutes'} → ${endDate || 'toutes'}`);
 
-      // Récupérer toutes les conversations récentes (limité à 100 par défaut)
-      const conversations = Conversation.findByAgentId(agentId, limit);
+      // Récupérer les conversations selon le filtre de dates
+      let conversations;
+      if (startDate && endDate) {
+        conversations = Conversation.findByAgentIdAndDateRange(agentId, startDate, endDate);
+      } else {
+        conversations = Conversation.findByAgentId(agentId);
+      }
 
       if (conversations.length === 0) {
         Logger.warning(`Aucune conversation trouvée pour l'agent ${agentId}`);
@@ -26,103 +31,154 @@ class ReportService {
 
       Logger.info(`${conversations.length} conversations trouvées pour l'agent ${agentId}`);
 
-      // Construire le texte des conversations pour analyse
+      // Construire le texte des conversations avec les dates
       let conversationsText = '';
       conversations.forEach((conv, i) => {
-        conversationsText += `Message ${i + 1}:\nClient: ${conv.user_message}\nAssistant: ${conv.bot_response}\n\n`;
+        const date = new Date(conv.created_at).toLocaleString('fr-FR', {
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+        conversationsText += `--- Conversation #${i + 1} | ${date} | Session: ${conv.session_id} ---\nClient: ${conv.user_message}\nAssistant: ${conv.bot_response}\n\n`;
       });
 
-      Logger.info('Analyse des conversations avec GPT-4 pour extraction de statistiques...');
+      // Déterminer la période pour le rapport
+      const firstDate = new Date(conversations[0].created_at).toLocaleDateString('fr-FR');
+      const lastDate = new Date(conversations[conversations.length - 1].created_at).toLocaleDateString('fr-FR');
 
-      // Utiliser OpenAI pour extraire les statistiques
+      Logger.info('Analyse avec GPT-4o...');
+
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: `Tu es un analyste de données qui extrait des statistiques précises des conversations de service client.
+            content: `Tu es un analyste expert en service client. Tu dois produire un rapport détaillé et clair pour un responsable du service client qui n'a aucune visibilité sur les conversations quotidiennes.
+
 Tu dois retourner UNIQUEMENT un JSON valide avec ce format exact:
 {
+  "resume_executif": "Un paragraphe de 3-4 phrases qui donne immédiatement une vue claire de la situation. Commence par l'essentiel : est-ce que les clients sont satisfaits ? Y a-t-il des problèmes ? Qu'est-ce qui se passe en gros ?",
   "nombre_interactions": <nombre>,
+  "nombre_sessions_uniques": <nombre de session_id différents>,
   "sujets": [
-    {"nom": "sujet1", "pourcentage": <nombre>},
-    {"nom": "sujet2", "pourcentage": <nombre>}
+    {"nom": "sujet", "pourcentage": <nombre>, "description": "En 1 phrase : de quoi s'agit concrètement ces conversations"}
   ],
   "sentiments": {
     "positifs": <pourcentage>,
     "negatifs": <pourcentage>,
-    "neutres": <pourcentage>
-  }
+    "neutres": <pourcentage>,
+    "detail": "Explication claire : quels clients ont exprimé un avis et en quoi"
+  },
+  "problemes_recurrents": [
+    {"probleme": "Description du problème", "frequence": <nombre de fois que ça apparaît>, "exemple": "Une vraie phrase du client qui illustre le problème"}
+  ],
+  "tendances": [
+    "Tendance observée sur la période, basée uniquement sur ce qui se passe vraiment dans les conversations"
+  ],
+  "recommandations": [
+    "Action concrète et actionnable que le responsable pourrait prendre, basée sur les données"
+  ]
 }
 
-Règles IMPORTANTES:
-- Analyse CHAQUE conversation individuellement pour identifier les sujets réellement abordés
-- NE PAS extrapoler ou inventer des sujets - reste strictement factuel
-- Un sujet doit être explicitement discuté dans la conversation pour être compté
+RÈGLES STRICTES :
+- NE PAS inventer ou extrapoler. Tout doit être basé sur ce qui se passe réellement dans les conversations
 - Les pourcentages des sujets doivent totaliser 100%
-- Identifie entre 3 et 7 sujets principaux uniquement si ces sujets sont réellement présents
-
-Pour les sentiments/avis:
-- Analyse le sentiment UNIQUEMENT si le client exprime clairement un avis (positif, négatif ou neutre)
-- NE PAS extrapoler les sentiments - si le client ne donne pas d'avis, ne pas en inventer
-- Si aucun avis n'est exprimé dans les conversations, mets tous les pourcentages à 0 et indique "Aucun avis exprimé"
-- Les pourcentages des sentiments doivent totaliser 100% (ou 0% si aucun avis)
-
+- Les pourcentages des sentiments doivent totaliser 100% (ou tous à 0 si aucun avis exprimé)
+- Si un client ne donne aucun avis, ne pas en inventer
+- Les "exemples" dans problemes_recurrents doivent être des vraies phrases des conversations
+- Les recommandations doivent être pratiques et réalistes
+- Le résumé exécutif doit être lisible en 10 secondes par quelqu'un qui n'a pas vu les conversations
 - Retourne UNIQUEMENT le JSON, sans texte avant ou après`
           },
           {
             role: 'user',
-            content: `Analyse ces ${conversations.length} conversations et extrait les statistiques:\n\n${conversationsText}`
+            content: `Analyse ces ${conversations.length} conversations du service client et produis le rapport détaillé.\n\n${preferences ? `Le responsable a demandé en particulier : ${preferences}\n\n` : ''}Conversations :\n\n${conversationsText}`
           }
         ],
         temperature: 0.3,
-        max_tokens: 1000
+        max_tokens: 2000
       });
 
       const statsText = response.choices[0].message.content.trim();
-      Logger.info('Statistiques brutes reçues de GPT-4');
+      Logger.info('Rapport brut reçu de GPT-4o');
 
       // Parser le JSON
       let stats;
       try {
-        // Nettoyer le texte (enlever les backticks markdown si présents)
         const cleanedText = statsText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         stats = JSON.parse(cleanedText);
       } catch (parseError) {
-        Logger.error('Erreur lors du parsing JSON des statistiques', parseError);
-        Logger.info('Texte reçu:', statsText);
-        throw new Error('Format de statistiques invalide reçu de GPT-4');
+        Logger.error('Erreur lors du parsing JSON', parseError);
+        throw new Error('Format de rapport invalide reçu de GPT-4o');
       }
 
       // Formater le rapport final
-      const rapport = this.formatStatisticsReport(stats, conversations.length);
+      const rapport = this.formatReport(stats, firstDate, lastDate);
 
-      Logger.success('Rapport statistique généré avec succès');
+      Logger.success('Rapport généré avec succès');
       return rapport;
     } catch (error) {
-      Logger.error('Erreur lors de la génération du rapport statistique', error);
+      Logger.error('Erreur lors de la génération du rapport', error);
       throw error;
     }
   }
 
-  static formatStatisticsReport(stats, totalConversations) {
-    let rapport = `📊 RAPPORT STATISTIQUE\n\n`;
-    rapport += `📈 Nombre d'interactions : ${stats.nombre_interactions || totalConversations}\n\n`;
+  static formatReport(stats, firstDate, lastDate) {
+    let r = '';
+    r += `📊 RAPPORT SERVICE CLIENT\n`;
+    r += `📅 Période : du ${firstDate} au ${lastDate}\n`;
+    r += `🕐 Généré le : ${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}\n`;
+    r += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    rapport += `📋 SUJETS ABORDÉS :\n`;
-    stats.sujets.forEach((sujet, index) => {
-      rapport += `${index + 1}. ${sujet.nom} : ${sujet.pourcentage}%\n`;
+    r += `📝 RÉSUMÉ EXÉCUTIF\n`;
+    r += `${stats.resume_executif}\n\n`;
+    r += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    r += `📈 STATISTIQUES\n`;
+    r += `• Interactions totales : ${stats.nombre_interactions}\n`;
+    r += `• Sessions uniques (clients) : ${stats.nombre_sessions_uniques || 'N/A'}\n\n`;
+
+    r += `📋 Sujets principaux :\n`;
+    stats.sujets.forEach((s, i) => {
+      r += `  ${i + 1}. ${s.nom} (${s.pourcentage}%) — ${s.description}\n`;
     });
 
-    rapport += `\n😊 ANALYSE DES SENTIMENTS :\n`;
-    rapport += `✅ Avis positifs : ${stats.sentiments.positifs}%\n`;
-    rapport += `❌ Avis négatifs : ${stats.sentiments.negatifs}%\n`;
-    rapport += `➖ Avis neutres : ${stats.sentiments.neutres}%\n`;
+    r += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    return rapport;
+    r += `😊 ANALYSE DES SENTIMENTS\n`;
+    r += `  ✅ Positifs : ${stats.sentiments.positifs}%\n`;
+    r += `  ❌ Négatifs : ${stats.sentiments.negatifs}%\n`;
+    r += `  ➖ Neutres  : ${stats.sentiments.neutres}%\n`;
+    r += `  📌 ${stats.sentiments.detail}\n\n`;
+    r += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    if (stats.problemes_recurrents && stats.problemes_recurrents.length > 0) {
+      r += `⚠️  PROBLÈMES RÉCURRENTS\n`;
+      stats.problemes_recurrents.forEach((p, i) => {
+        r += `  ${i + 1}. ${p.probleme} (${p.frequence}x)\n`;
+        r += `     💬 "${p.exemple}"\n`;
+      });
+      r += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    }
+
+    if (stats.tendances && stats.tendances.length > 0) {
+      r += `📈 TENDANCES\n`;
+      stats.tendances.forEach((t, i) => {
+        r += `  ${i + 1}. ${t}\n`;
+      });
+      r += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    }
+
+    if (stats.recommandations && stats.recommandations.length > 0) {
+      r += `💡 RECOMMANDATIONS\n`;
+      stats.recommandations.forEach((rec, i) => {
+        r += `  ${i + 1}. ${rec}\n`;
+      });
+    }
+
+    return r;
   }
 
-  static async sendReport(agentId) {
+  static async sendReport(agentId, { startDate, endDate, preferences } = {}) {
     try {
       Logger.info(`Préparation de l'envoi du rapport pour l'agent ${agentId}`);
 
@@ -134,12 +190,12 @@ Pour les sentiments/avis:
 
       Logger.info(`Agent trouvé: ${agent.email}`);
 
-      // Générer le résumé
-      const summary = await this.generateSummary(agentId);
+      // Générer le résumé avec les filtres
+      const summary = await this.generateSummary(agentId, { startDate, endDate, preferences });
 
       if (!summary) {
         Logger.warning(`Aucune conversation à rapporter pour l'agent ${agentId}`);
-        return { success: false, error: 'Aucune conversation à rapporter' };
+        return { success: false, error: 'Aucune conversation trouvée pour cette période' };
       }
 
       // Préparer le payload pour le webhook

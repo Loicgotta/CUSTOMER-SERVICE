@@ -10,14 +10,33 @@ class Conversation {
     return result.lastInsertRowid;
   }
 
-  static findByAgentId(agentId, limit = 100) {
+  static findByAgentId(agentId, limit = null) {
+    if (limit) {
+      const stmt = db.prepare(`
+        SELECT * FROM conversations
+        WHERE agent_id = ?
+        ORDER BY created_at ASC
+        LIMIT ?
+      `);
+      return stmt.all(agentId, limit);
+    }
     const stmt = db.prepare(`
       SELECT * FROM conversations
       WHERE agent_id = ?
-      ORDER BY created_at DESC
-      LIMIT ?
+      ORDER BY created_at ASC
     `);
-    return stmt.all(agentId, limit);
+    return stmt.all(agentId);
+  }
+
+  static findByAgentIdAndDateRange(agentId, startDate, endDate) {
+    const stmt = db.prepare(`
+      SELECT * FROM conversations
+      WHERE agent_id = ?
+      AND DATE(created_at) >= DATE(?)
+      AND DATE(created_at) <= DATE(?)
+      ORDER BY created_at ASC
+    `);
+    return stmt.all(agentId, startDate, endDate);
   }
 
   static findBySessionId(sessionId) {

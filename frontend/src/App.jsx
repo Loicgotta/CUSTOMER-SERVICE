@@ -15,6 +15,15 @@ function App() {
   const [showLogs, setShowLogs] = useState(false);
   const [notification, setNotification] = useState(null);
 
+  // Modal rapport
+  const [reportModalAgent, setReportModalAgent] = useState(null);
+  const [reportOptions, setReportOptions] = useState({
+    dateRange: 'all',
+    startDate: '',
+    endDate: '',
+    preferences: ''
+  });
+
   // Chat de test
   const [testingAgent, setTestingAgent] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
@@ -170,10 +179,24 @@ function App() {
     }
   };
 
-  const handleSendReport = async (agentId) => {
-    setSendingReport(agentId);
+  const openReportModal = (agentId) => {
+    setReportModalAgent(agentId);
+    setReportOptions({ dateRange: 'all', startDate: '', endDate: '', preferences: '' });
+  };
+
+  const submitReport = async () => {
+    setSendingReport(reportModalAgent);
     try {
-      const response = await axios.post(`/api/reports/send/${agentId}`);
+      const body = {};
+      if (reportOptions.dateRange === 'custom') {
+        body.startDate = reportOptions.startDate;
+        body.endDate = reportOptions.endDate;
+      }
+      if (reportOptions.preferences.trim()) {
+        body.preferences = reportOptions.preferences.trim();
+      }
+
+      const response = await axios.post(`/api/reports/send/${reportModalAgent}`, body);
 
       if (response.data.success) {
         setNotification({
@@ -192,6 +215,7 @@ function App() {
       setNotification({ type: 'error', message: `Erreur: ${errorMsg}` });
     } finally {
       setSendingReport(null);
+      setReportModalAgent(null);
     }
   };
 
@@ -422,10 +446,9 @@ function App() {
                 </button>
                 <button
                   className="btn btn-report btn-sm"
-                  onClick={() => handleSendReport(agent.id)}
-                  disabled={sendingReport === agent.id}
+                  onClick={() => openReportModal(agent.id)}
                 >
-                  {sendingReport === agent.id ? '📨 Envoi en cours...' : '📧 Envoyer Rapport'}
+                  📧 Envoyer Rapport
                 </button>
               </div>
 
@@ -449,6 +472,87 @@ function App() {
           <div className="empty-state">
             <h2>Aucun agent créé</h2>
             <p>Créez votre premier agent de service client pour commencer</p>
+          </div>
+        )}
+
+        {reportModalAgent && (
+          <div className="modal-overlay" onClick={() => setReportModalAgent(null)}>
+            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>📧 Rapport — Agent #{reportModalAgent}</h2>
+                <button className="modal-close" onClick={() => setReportModalAgent(null)}>×</button>
+              </div>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>Période du rapport</label>
+                  <div className="radio-group">
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="dateRange"
+                        value="all"
+                        checked={reportOptions.dateRange === 'all'}
+                        onChange={() => setReportOptions({ ...reportOptions, dateRange: 'all' })}
+                      />
+                      Toutes les discussions
+                    </label>
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="dateRange"
+                        value="custom"
+                        checked={reportOptions.dateRange === 'custom'}
+                        onChange={() => setReportOptions({ ...reportOptions, dateRange: 'custom' })}
+                      />
+                      Entre deux dates
+                    </label>
+                  </div>
+                </div>
+
+                {reportOptions.dateRange === 'custom' && (
+                  <div className="date-range-inputs">
+                    <div className="form-group">
+                      <label>Date de début *</label>
+                      <input
+                        type="date"
+                        value={reportOptions.startDate}
+                        onChange={(e) => setReportOptions({ ...reportOptions, startDate: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Date de fin *</label>
+                      <input
+                        type="date"
+                        value={reportOptions.endDate}
+                        onChange={(e) => setReportOptions({ ...reportOptions, endDate: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label>Ce que vous voulez dans le rapport (optionnel)</label>
+                  <textarea
+                    rows="3"
+                    placeholder="Ex: Focus sur les problèmes techniques, les réclamations, le taux de satisfaction..."
+                    value={reportOptions.preferences}
+                    onChange={(e) => setReportOptions({ ...reportOptions, preferences: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary btn-sm" onClick={() => setReportModalAgent(null)}>
+                  Annuler
+                </button>
+                <button
+                  className="btn btn-report btn-sm"
+                  onClick={submitReport}
+                  disabled={sendingReport === reportModalAgent || (reportOptions.dateRange === 'custom' && (!reportOptions.startDate || !reportOptions.endDate))}
+                >
+                  {sendingReport === reportModalAgent ? '📨 Envoi en cours...' : '📧 Envoyer le Rapport'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

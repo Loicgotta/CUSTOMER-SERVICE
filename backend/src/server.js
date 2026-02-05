@@ -44,8 +44,10 @@ app.use('/api/chat', chatRouter);
 // Route pour envoyer manuellement un rapport
 app.post('/api/reports/send/:agentId', async (req, res) => {
   try {
-    Logger.info(`Requête d'envoi de rapport pour l'agent ${req.params.agentId}`);
-    const result = await ReportService.sendReport(req.params.agentId);
+    const { startDate, endDate, preferences } = req.body || {};
+    Logger.info(`Requête rapport agent ${req.params.agentId} | Dates: ${startDate || 'toutes'} → ${endDate || 'toutes'} | Prefs: ${preferences || 'aucune'}`);
+
+    const result = await ReportService.sendReport(req.params.agentId, { startDate, endDate, preferences });
 
     if (result.success) {
       Logger.success(`Rapport envoyé avec succès à ${result.email}`);
