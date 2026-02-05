@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import Agent from '../models/Agent.js';
 import Conversation from '../models/Conversation.js';
 import RAGService from './ragService.js';
+import Embedding from '../models/Embedding.js';
 import Logger from '../utils/logger.js';
 import dotenv from 'dotenv';
 
@@ -12,6 +13,41 @@ const openai = new OpenAI({
 });
 
 class ChatService {
+  // Détecter si le message mentionne un document spécifique
+  static async detectDocumentMention(userMessage, agentId) {
+    try {
+      // Récupérer la liste des documents disponibles
+      const documentNames = Embedding.getDocumentNames(agentId);
+
+      if (documentNames.length === 0) return null;
+
+      // Demander à GPT de détecter une mention de document
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{
+          role: 'system',
+          content: `Tu es un détecteur de mention de documents. L'utilisateur peut demander à consulter un document spécifique.
+
+Documents disponibles : ${documentNames.join(', ')}
+
+Si le message mentionne explicitement un de ces documents (ex: "consulte X", "dans le document Y", "regarde dans Z"), retourne UNIQUEMENT le nom exact du document mentionné.
+Si aucun document n'est mentionné de manière explicite, retourne VIDE.`
+        }, {
+          role: 'user',
+          content: userMessage
+        }],
+        temperature: 0,
+        max_tokens: 50
+      });
+
+      const detected = response.choices[0].message.content.trim();
+      return documentNames.includes(detected) ? detected : null;
+    } catch (error) {
+      Logger.error('Erreur détection document', error);
+      return null;
+    }
+  }
+
   static async processMessage(agentId, sessionId, userMessage) {
     try {
       // Récupérer l'agent
@@ -20,8 +56,11 @@ class ChatService {
         throw new Error('Agent non trouvé');
       }
 
-      // Récupérer les chunks pertinents de la documentation
-      const relevantChunks = await RAGService.searchRelevantChunks(agentId, userMessage);
+      // Détecter si un document spécifique est mentionné
+      const mentionedDoc = await this.detectDocumentMention(userMessage, agentId);
+
+      // Récupérer les chunks pertinents de la documentation (filtrés si nécessaire)
+      const relevantChunks = await RAGService.searchRelevantChunks(agentId, userMessage, 3, mentionedDoc);
 
       // Récupérer l'historique de conversation de la session
       const conversationHistory = Conversation.findBySessionId(sessionId);
@@ -32,8 +71,12 @@ class ChatService {
       if (relevantChunks.length > 0) {
         context += 'Documentation pertinente:\n';
         relevantChunks.forEach((chunk, i) => {
-          context += `${i + 1}. ${chunk}\n\n`;
+          context += `${i + 1}. [${chunk.source}] ${chunk.text}\n\n`;
         });
+      }
+
+      if (mentionedDoc) {
+        context += `\nℹ️ L'utilisateur a demandé à consulter spécifiquement le document "${mentionedDoc}".\n`;
       }
 
       context += `\n\nInstructions de suivi:

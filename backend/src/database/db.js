@@ -62,6 +62,13 @@ try {
   // Colonne déjà existe
 }
 
+// Migration : ajouter document_name aux embeddings
+try {
+  db.exec("ALTER TABLE embeddings ADD COLUMN document_name TEXT DEFAULT 'Documentation'");
+} catch (e) {
+  // Colonne déjà existe
+}
+
 console.log('Database initialized successfully');
 
 export default db;

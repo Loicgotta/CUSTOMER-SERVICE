@@ -764,6 +764,72 @@
 .or-divider::before { right: 55%; }
 .or-divider::after { left: 55%; }
 
+/* Liste des documents */
+.documents-list {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.documents-list strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+  font-size: 0.875rem;
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.document-item:hover {
+  border-color: #cbd5e0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.document-name {
+  font-size: 0.875rem;
+  color: #4a5568;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.document-remove-btn {
+  background: #fed7d7;
+  color: #c53030;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.document-remove-btn:hover {
+  background: #fc8181;
+  color: white;
+  transform: scale(1.1);
+}
+
 /* Sélecteur de couleur widget */
 .color-picker {
   display: flex;

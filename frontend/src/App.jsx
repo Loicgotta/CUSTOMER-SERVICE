@@ -21,15 +21,15 @@ function App() {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     prompt: '',
-    documentation: '',
     email: '',
     color: '#667eea'
   });
+  const [documents, setDocuments] = useState([]);
+  const [manualDocText, setManualDocText] = useState('');
   const [sendingReport, setSendingReport] = useState(null);
   const [logs, setLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(false);
   const [notification, setNotification] = useState(null);
-  const [uploadedFileName, setUploadedFileName] = useState('');
   const [docExtracting, setDocExtracting] = useState(false);
 
   // Modal rapport
@@ -108,9 +108,16 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/api/agents', formData);
-      setFormData({ prompt: '', documentation: '', email: '', color: '#667eea' });
-      setUploadedFileName('');
+      // Ajouter la documentation manuelle si présente
+      const allDocs = [...documents];
+      if (manualDocText.trim()) {
+        allDocs.push({ name: 'Documentation manuelle', content: manualDocText.trim() });
+      }
+
+      const response = await axios.post('/api/agents', { ...formData, documents: allDocs });
+      setFormData({ prompt: '', email: '', color: '#667eea' });
+      setDocuments([]);
+      setManualDocText('');
       setShowForm(false);
       loadAgents();
 
@@ -134,6 +141,12 @@ function App() {
     if (!file) return;
     e.target.value = '';
 
+    // Vérifier si un document avec ce nom existe déjà
+    if (documents.some(d => d.name === file.name)) {
+      setNotification({ type: 'warning', message: `Le document "${file.name}" est déjà ajouté` });
+      return;
+    }
+
     const ext = file.name.split('.').pop().toLowerCase();
     const textFormats = ['txt', 'md', 'csv', 'json'];
 
@@ -141,8 +154,7 @@ function App() {
       // Formats texte : lecture directe en navigateur
       const reader = new FileReader();
       reader.onload = (event) => {
-        setFormData(prev => ({ ...prev, documentation: event.target.result }));
-        setUploadedFileName(file.name);
+        setDocuments(prev => [...prev, { name: file.name, content: event.target.result }]);
       };
       reader.onerror = () => {
         setNotification({ type: 'error', message: 'Erreur lors de la lecture du fichier' });
@@ -155,8 +167,7 @@ function App() {
         const payload = new FormData();
         payload.append('file', file);
         const response = await axios.post('/api/docs/extract', payload);
-        setFormData(prev => ({ ...prev, documentation: response.data.text }));
-        setUploadedFileName(file.name);
+        setDocuments(prev => [...prev, { name: file.name, content: response.data.text }]);
       } catch (error) {
         const errorMsg = error.response?.data?.error || error.message;
         setNotification({ type: 'error', message: `Extraction échouée : ${errorMsg}` });
@@ -164,6 +175,10 @@ function App() {
         setDocExtracting(false);
       }
     }
+  };
+
+  const handleRemoveDocument = (docName) => {
+    setDocuments(prev => prev.filter(d => d.name !== docName));
   };
 
   const handleDelete = async (id) => {
@@ -404,20 +419,34 @@ function App() {
                   <label htmlFor="doc-file-input" className={`file-upload-btn${docExtracting ? ' file-upload-btn-loading' : ''}`}>
                     {docExtracting ? '⏳ Extraction...' : '📁 Choisir un fichier'}
                   </label>
-                  {uploadedFileName && !docExtracting && (
-                    <span className="file-name-display">{uploadedFileName}</span>
-                  )}
                 </div>
                 <small>Formats supportés : .txt, .md, .csv, .json, .pdf, .docx, .xlsx (max 10 Mo)</small>
-                <div className="or-divider">ou</div>
+
+                {documents.length > 0 && (
+                  <div className="documents-list">
+                    <strong>{documents.length} document{documents.length > 1 ? 's' : ''} chargé{documents.length > 1 ? 's' : ''} :</strong>
+                    {documents.map((doc, i) => (
+                      <div key={i} className="document-item">
+                        <span className="document-name">📄 {doc.name}</span>
+                        <button
+                          type="button"
+                          className="document-remove-btn"
+                          onClick={() => handleRemoveDocument(doc.name)}
+                          title="Supprimer ce document"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="or-divider">ou saisissez directement</div>
                 <textarea
                   rows="6"
                   placeholder="Collez ici votre documentation produit, FAQ, etc. Elle sera indexée et utilisée par l'agent pour répondre aux questions."
-                  value={formData.documentation}
-                  onChange={(e) => {
-                    setFormData({ ...formData, documentation: e.target.value });
-                    setUploadedFileName('');
-                  }}
+                  value={manualDocText}
+                  onChange={(e) => setManualDocText(e.target.value)}
                 />
               </div>
 

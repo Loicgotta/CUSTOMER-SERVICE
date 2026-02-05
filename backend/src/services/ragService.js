@@ -37,27 +37,43 @@ class RAGService {
     }
   }
 
-  // Indexer la documentation d'un agent
-  static async indexDocumentation(agentId, documentation) {
+  // Indexer la documentation d'un agent (accepte un array de documents)
+  static async indexDocumentation(agentId, documents) {
     try {
+      // documents = [{ name: string, content: string }] ou string (legacy)
+      const docsArray = Array.isArray(documents)
+        ? documents
+        : [{ name: 'Documentation', content: documents }];
+
       // Supprimer les anciens embeddings
       Embedding.deleteByAgentId(agentId);
 
-      // Découper la documentation
-      const chunks = this.chunkText(documentation);
+      let totalChunks = 0;
 
-      // Créer des embeddings pour chaque chunk
-      for (const chunk of chunks) {
-        const embedding = await this.createEmbedding(chunk);
-        Embedding.create({
-          agentId,
-          chunkText: chunk,
-          embedding
-        });
+      // Indexer chaque document séparément
+      for (const doc of docsArray) {
+        if (!doc.content || doc.content.trim().length === 0) continue;
+
+        // Découper le document
+        const chunks = this.chunkText(doc.content);
+
+        // Créer des embeddings pour chaque chunk avec le nom du document
+        for (const chunk of chunks) {
+          const embedding = await this.createEmbedding(chunk);
+          Embedding.create({
+            agentId,
+            chunkText: chunk,
+            embedding,
+            documentName: doc.name || 'Documentation'
+          });
+        }
+
+        totalChunks += chunks.length;
+        Logger.info(`Document "${doc.name}" indexé: ${chunks.length} chunks`);
       }
 
-      Logger.success(`Documentation indexée pour l'agent ${agentId}: ${chunks.length} chunks`);
-      return chunks.length;
+      Logger.success(`Documentation indexée pour l'agent ${agentId}: ${totalChunks} chunks total (${docsArray.length} documents)`);
+      return totalChunks;
     } catch (error) {
       Logger.error('Erreur lors de l\'indexation', error);
       throw error;
@@ -72,14 +88,14 @@ class RAGService {
     return dotProduct / (magnitudeA * magnitudeB);
   }
 
-  // Rechercher les chunks les plus pertinents
-  static async searchRelevantChunks(agentId, query, topK = 3) {
+  // Rechercher les chunks les plus pertinents (avec filtre optionnel par document)
+  static async searchRelevantChunks(agentId, query, topK = 3, documentName = null) {
     try {
       // Créer l'embedding de la requête
       const queryEmbedding = await this.createEmbedding(query);
 
-      // Récupérer tous les embeddings de l'agent
-      const embeddings = Embedding.findByAgentId(agentId);
+      // Récupérer les embeddings de l'agent (filtrés par document si spécifié)
+      const embeddings = Embedding.findByAgentId(agentId, documentName);
 
       if (embeddings.length === 0) {
         return [];
@@ -88,12 +104,19 @@ class RAGService {
       // Calculer les similarités
       const similarities = embeddings.map(emb => ({
         chunkText: emb.chunk_text,
+        documentName: emb.document_name,
         similarity: this.cosineSimilarity(queryEmbedding, emb.embedding)
       }));
 
       // Trier par similarité et prendre les top K
       similarities.sort((a, b) => b.similarity - a.similarity);
-      return similarities.slice(0, topK).map(s => s.chunkText);
+      const results = similarities.slice(0, topK);
+
+      if (documentName) {
+        Logger.info(`Recherche RAG filtrée par document "${documentName}": ${results.length} chunks trouvés`);
+      }
+
+      return results.map(s => ({ text: s.chunkText, source: s.documentName }));
     } catch (error) {
       Logger.error('Erreur lors de la recherche', error);
       return [];

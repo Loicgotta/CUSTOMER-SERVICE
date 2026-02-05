@@ -7,19 +7,21 @@ const router = express.Router();
 // Créer un nouvel agent
 router.post('/', async (req, res) => {
   try {
-    const { prompt, documentation, email, color } = req.body;
+    const { prompt, documentation, documents, email, color } = req.body;
 
     if (!prompt || !email) {
       return res.status(400).json({ error: 'Prompt et email sont requis' });
     }
 
-    // Créer l'agent
-    const agentId = Agent.create({ prompt, documentation: documentation || '', email, color });
+    // Créer l'agent (on ne stocke plus la documentation en DB, uniquement dans embeddings)
+    const agentId = Agent.create({ prompt, documentation: '', email, color });
 
-    // Indexer la documentation si elle existe
-    if (documentation) {
+    // Indexer la documentation si elle existe (nouveau format ou legacy)
+    const docsToIndex = documents || (documentation ? [{ name: 'Documentation', content: documentation }] : null);
+
+    if (docsToIndex && docsToIndex.length > 0) {
       try {
-        await RAGService.indexDocumentation(agentId, documentation);
+        await RAGService.indexDocumentation(agentId, docsToIndex);
       } catch (ragError) {
         console.error('Erreur lors de l\'indexation RAG:', ragError);
         // L'agent est créé mais la documentation n'est pas indexée
