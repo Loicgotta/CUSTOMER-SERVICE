@@ -56,7 +56,7 @@ class ReportService {
 
 Tu dois retourner UNIQUEMENT un JSON valide avec ce format exact:
 {
-  "resume_executif": "Un paragraphe de 3-4 phrases qui donne immédiatement une vue claire de la situation. Commence par l'essentiel : est-ce que les clients sont satisfaits ? Y a-t-il des problèmes ? Qu'est-ce qui se passe en gros ?",
+  "resume_executif": "Un paragraphe de 3-4 phrases qui donne immédiatement une vue claire de la situation. Commence par l'essentiel : est-ce que les clients sont satisfaits ? Y a-t-il des problèmes ? Qu'est-ce qui se passe en gros ?${preferences ? ' IMPORTANT: Intègre prioritairement les aspects demandés par le responsable.' : ''}",
   "nombre_interactions": <nombre>,
   "nombre_sessions_uniques": <nombre de session_id différents>,
   "sujets": [
@@ -87,11 +87,18 @@ RÈGLES STRICTES :
 - Les "exemples" dans problemes_recurrents doivent être des vraies phrases des conversations
 - Les recommandations doivent être pratiques et réalistes
 - Le résumé exécutif doit être lisible en 10 secondes par quelqu'un qui n'a pas vu les conversations
-- Retourne UNIQUEMENT le JSON, sans texte avant ou après`
+${preferences ? `- PRIORITÉ ABSOLUE : Le responsable a des préférences spécifiques (voir message utilisateur). Toutes les sections du rapport (résumé exécutif, problèmes récurrents, tendances, recommandations) doivent PRIORITAIREMENT traiter ces aspects. Si les données le permettent, consacre l'essentiel de l'analyse aux points demandés.` : ''}- Retourne UNIQUEMENT le JSON, sans texte avant ou après`
           },
           {
             role: 'user',
-            content: `Analyse ces ${conversations.length} conversations du service client et produis le rapport détaillé.\n\n${preferences ? `Le responsable a demandé en particulier : ${preferences}\n\n` : ''}Conversations :\n\n${conversationsText}`
+            content: `Analyse ces ${conversations.length} conversations du service client et produis le rapport détaillé.
+
+${preferences ? `🎯 PRÉFÉRENCES DU RESPONSABLE (à traiter en PRIORITÉ dans toutes les sections du rapport) :
+${preferences}
+
+` : ''}Conversations :
+
+${conversationsText}`
           }
         ],
         temperature: 0.3,
