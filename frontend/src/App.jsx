@@ -30,6 +30,7 @@ function App() {
   const [showLogs, setShowLogs] = useState(false);
   const [notification, setNotification] = useState(null);
   const [uploadedFileName, setUploadedFileName] = useState('');
+  const [docExtracting, setDocExtracting] = useState(false);
 
   // Modal rapport
   const [reportModalAgent, setReportModalAgent] = useState(null);
@@ -128,19 +129,41 @@ function App() {
     }
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setFormData(prev => ({ ...prev, documentation: event.target.result }));
-      setUploadedFileName(file.name);
-    };
-    reader.onerror = () => {
-      setNotification({ type: 'error', message: 'Erreur lors de la lecture du fichier' });
-    };
-    reader.readAsText(file);
     e.target.value = '';
+
+    const ext = file.name.split('.').pop().toLowerCase();
+    const textFormats = ['txt', 'md', 'csv', 'json'];
+
+    if (textFormats.includes(ext)) {
+      // Formats texte : lecture directe en navigateur
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFormData(prev => ({ ...prev, documentation: event.target.result }));
+        setUploadedFileName(file.name);
+      };
+      reader.onerror = () => {
+        setNotification({ type: 'error', message: 'Erreur lors de la lecture du fichier' });
+      };
+      reader.readAsText(file);
+    } else {
+      // PDF / DOCX / XLSX : extraction server-side
+      setDocExtracting(true);
+      try {
+        const payload = new FormData();
+        payload.append('file', file);
+        const response = await axios.post('/api/docs/extract', payload);
+        setFormData(prev => ({ ...prev, documentation: response.data.text }));
+        setUploadedFileName(file.name);
+      } catch (error) {
+        const errorMsg = error.response?.data?.error || error.message;
+        setNotification({ type: 'error', message: `Extraction échouée : ${errorMsg}` });
+      } finally {
+        setDocExtracting(false);
+      }
+    }
   };
 
   const handleDelete = async (id) => {
@@ -373,18 +396,19 @@ function App() {
                   <input
                     type="file"
                     id="doc-file-input"
-                    accept=".txt,.md,.csv,.json"
+                    accept=".txt,.md,.csv,.json,.pdf,.docx,.xlsx"
                     className="file-input-hidden"
                     onChange={handleFileUpload}
+                    disabled={docExtracting}
                   />
-                  <label htmlFor="doc-file-input" className="file-upload-btn">
-                    📁 Choisir un fichier
+                  <label htmlFor="doc-file-input" className={`file-upload-btn${docExtracting ? ' file-upload-btn-loading' : ''}`}>
+                    {docExtracting ? '⏳ Extraction...' : '📁 Choisir un fichier'}
                   </label>
-                  {uploadedFileName && (
+                  {uploadedFileName && !docExtracting && (
                     <span className="file-name-display">{uploadedFileName}</span>
                   )}
                 </div>
-                <small>Formats supportés : .txt, .md, .csv, .json</small>
+                <small>Formats supportés : .txt, .md, .csv, .json, .pdf, .docx, .xlsx (max 10 Mo)</small>
                 <div className="or-divider">ou</div>
                 <textarea
                   rows="6"

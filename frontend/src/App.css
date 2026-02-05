@@ -719,10 +719,17 @@
   transition: all 0.2s ease;
 }
 
-.file-upload-btn:hover {
+.file-upload-btn:hover:not(.file-upload-btn-loading) {
   background: #e2e8f0;
   border-color: #667eea;
   color: #667eea;
+}
+
+.file-upload-btn-loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+  border-color: #ed8936;
+  color: #ed8936;
 }
 
 .file-name-display {

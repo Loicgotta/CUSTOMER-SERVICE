@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import agentsRouter from './routes/agents.js';
 import chatRouter from './routes/chat.js';
+import docsRouter from './routes/docs.js';
 import ReportService from './services/reportService.js';
 import Logger from './utils/logger.js';
 import './database/db.js'; // Initialiser la DB
@@ -40,6 +41,7 @@ app.use(express.static(frontendPath));
 // Routes API
 app.use('/api/agents', agentsRouter);
 app.use('/api/chat', chatRouter);
+app.use('/api/docs', docsRouter);
 
 // Route pour envoyer manuellement un rapport
 app.post('/api/reports/send/:agentId', async (req, res) => {
