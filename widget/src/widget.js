@@ -178,6 +178,11 @@
         font-size: 0.9rem;
         font-family: inherit;
         outline: none;
+        resize: none;
+        min-height: 42px;
+        max-height: 120px;
+        overflow-y: auto;
+        line-height: 1.4;
       }
 
       #chatbot-input:focus {
@@ -231,9 +236,46 @@
       }
 
       @media (max-width: 480px) {
+        #chatbot-widget {
+          bottom: 10px;
+          right: 10px;
+        }
+
+        #chatbot-button {
+          width: 56px;
+          height: 56px;
+        }
+
+        #chatbot-button svg {
+          width: 26px;
+          height: 26px;
+        }
+
         #chatbot-window {
-          width: calc(100vw - 40px);
-          height: calc(100vh - 140px);
+          bottom: 80px;
+          right: 10px;
+          left: 10px;
+          width: auto;
+          height: calc(100vh - 100px);
+          max-height: 600px;
+        }
+
+        #chatbot-header h3 {
+          font-size: 1rem;
+        }
+
+        #chatbot-input-area {
+          padding: 0.75rem;
+        }
+
+        #chatbot-send {
+          padding: 0.75rem 1rem;
+          font-size: 0.85rem;
+        }
+
+        .chatbot-message-content {
+          max-width: 80%;
+          font-size: 0.85rem;
         }
       }
     `;
@@ -269,12 +311,12 @@
           </div>
 
           <div id="chatbot-input-area">
-            <input
-              type="text"
+            <textarea
               id="chatbot-input"
               placeholder="Tapez votre message..."
               autocomplete="off"
-            />
+              rows="1"
+            ></textarea>
             <button id="chatbot-send">Envoyer</button>
           </div>
         </div>
@@ -374,6 +416,12 @@
     }
   }
 
+  // Auto-resize textarea
+  function autoResizeTextarea(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+  }
+
   // Initialiser le widget
   function init() {
     injectStyles();
@@ -401,16 +449,24 @@
       chatWindow.classList.remove('open');
     });
 
+    // Auto-resize sur input
+    input.addEventListener('input', () => {
+      autoResizeTextarea(input);
+    });
+
     sendButton.addEventListener('click', () => {
       const message = input.value;
       input.value = '';
+      autoResizeTextarea(input);
       sendMessage(message);
     });
 
     input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
         const message = input.value;
         input.value = '';
+        autoResizeTextarea(input);
         sendMessage(message);
       }
     });

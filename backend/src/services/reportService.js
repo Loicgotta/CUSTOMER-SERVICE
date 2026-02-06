@@ -54,10 +54,14 @@ class ReportService {
             role: 'system',
             content: `Tu es un analyste expert en service client. Tu dois produire un rapport détaillé et clair pour un responsable du service client qui n'a aucune visibilité sur les conversations quotidiennes.
 
+${preferences ? `🎯 SUJET DU RAPPORT : "${preferences}"
+
+Ce rapport doit traiter EXCLUSIVEMENT de ce sujet. Ignore les conversations qui ne sont pas liées à ce sujet. Toutes les sections (résumé, sujets, problèmes, tendances, recommandations) doivent porter UNIQUEMENT sur ce sujet spécifique.` : `Ce rapport doit être une analyse GÉNÉRALE couvrant tous les aspects des conversations.`}
+
 Tu dois retourner UNIQUEMENT un JSON valide avec ce format exact:
 {
-  "resume_executif": "Un paragraphe de 3-4 phrases qui donne immédiatement une vue claire de la situation. Commence par l'essentiel : est-ce que les clients sont satisfaits ? Y a-t-il des problèmes ? Qu'est-ce qui se passe en gros ?${preferences ? ' IMPORTANT: Concentre-toi prioritairement sur les axes d\'analyse demandés.' : ''}",
-  "nombre_interactions": <nombre>,
+  "resume_executif": "Un paragraphe de 3-4 phrases qui donne immédiatement une vue claire de la situation${preferences ? ' concernant ' + preferences : ''}. Commence par l'essentiel : est-ce que les clients sont satisfaits ? Y a-t-il des problèmes ? Qu'est-ce qui se passe en gros ?",
+  "nombre_interactions": <nombre${preferences ? ' de conversations liées au sujet' : ' total'}>,
   "nombre_sessions_uniques": <nombre de session_id différents>,
   "sujets": [
     {"nom": "sujet", "pourcentage": <nombre>, "description": "En 1 phrase : de quoi s'agit concrètement ces conversations"}
@@ -81,22 +85,20 @@ Tu dois retourner UNIQUEMENT un JSON valide avec ce format exact:
 
 RÈGLES STRICTES :
 - NE PAS inventer ou extrapoler. Tout doit être basé sur ce qui se passe réellement dans les conversations
+${preferences ? `- SUJET EXCLUSIF : Analyse UNIQUEMENT les conversations liées à "${preferences}". Si aucune conversation ne traite de ce sujet, retourne nombre_interactions: 0 et des tableaux vides.` : ''}
 - Les pourcentages des sujets doivent totaliser 100%
 - Les pourcentages des sentiments doivent totaliser 100% (ou tous à 0 si aucun avis exprimé)
 - Si un client ne donne aucun avis, ne pas en inventer
 - Les "exemples" dans problemes_recurrents doivent être des vraies phrases des conversations
 - Les recommandations doivent être pratiques et réalistes
 - Le résumé exécutif doit être lisible en 10 secondes par quelqu'un qui n'a pas vu les conversations
-${preferences ? `- FOCUS DU RAPPORT : Des axes d'analyse spécifiques ont été demandés (voir message utilisateur). Toutes les sections du rapport (résumé exécutif, problèmes récurrents, tendances, recommandations) doivent se concentrer PRIORITAIREMENT sur ces axes. Si les données le permettent, consacre l'essentiel de l'analyse aux aspects demandés.` : ''}- Retourne UNIQUEMENT le JSON, sans texte avant ou après`
+- Retourne UNIQUEMENT le JSON, sans texte avant ou après`
           },
           {
             role: 'user',
-            content: `Analyse ces ${conversations.length} conversations du service client et produis le rapport détaillé.
+            content: `Analyse ces ${conversations.length} conversations du service client et produis le rapport détaillé${preferences ? ` sur le sujet : "${preferences}"` : ''}.
 
-${preferences ? `🎯 FOCUS DU RAPPORT (axes d'analyse à traiter en PRIORITÉ dans toutes les sections) :
-${preferences}
-
-` : ''}Conversations :
+Conversations :
 
 ${conversationsText}`
           }

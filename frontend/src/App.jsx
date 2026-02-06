@@ -28,8 +28,6 @@ function App() {
   const [documents, setDocuments] = useState([]);
   const [manualDocText, setManualDocText] = useState('');
   const [sendingReport, setSendingReport] = useState(null);
-  const [logs, setLogs] = useState([]);
-  const [showLogs, setShowLogs] = useState(false);
   const [notification, setNotification] = useState(null);
   const [docExtracting, setDocExtracting] = useState(false);
 
@@ -63,17 +61,7 @@ function App() {
   // Charger les agents au démarrage
   useEffect(() => {
     loadAgents();
-    loadLogs();
-
-    // Rafraîchir les logs toutes les 3 secondes
-    const logsInterval = setInterval(() => {
-      if (showLogs) {
-        loadLogs();
-      }
-    }, 3000);
-
-    return () => clearInterval(logsInterval);
-  }, [showLogs]);
+  }, []);
 
   const loadAgents = async () => {
     try {
@@ -81,28 +69,6 @@ function App() {
       setAgents(response.data);
     } catch (error) {
       console.error('Erreur lors du chargement des agents:', error);
-    }
-  };
-
-  const loadLogs = async () => {
-    try {
-      const response = await axios.get('/api/logs');
-      setLogs(response.data.logs || []);
-    } catch (error) {
-      console.error('Erreur lors du chargement des logs:', error);
-    }
-  };
-
-  const clearLogs = async () => {
-    if (window.confirm('Êtes-vous sûr de vouloir effacer tous les logs?')) {
-      try {
-        await axios.delete('/api/logs');
-        setLogs([]);
-        setNotification({ type: 'success', message: 'Logs effacés avec succès' });
-      } catch (error) {
-        console.error('Erreur lors de l\'effacement des logs:', error);
-        setNotification({ type: 'error', message: 'Erreur lors de l\'effacement des logs' });
-      }
     }
   };
 
@@ -405,12 +371,6 @@ function App() {
           >
             {showForm ? 'Annuler' : '+ Créer un Agent'}
           </button>
-          <button
-            className="btn btn-logs"
-            onClick={() => setShowLogs(!showLogs)}
-          >
-            {showLogs ? '📊 Masquer Logs' : '📊 Voir Logs Serveur'}
-          </button>
         </div>
 
         {notification && (
@@ -531,54 +491,6 @@ function App() {
                 Créer l'Agent
               </button>
             </form>
-          </div>
-        )}
-
-        {showLogs && (
-          <div className="logs-container">
-            <div className="logs-header">
-              <h2>📊 Logs Serveur (Actualisation automatique toutes les 3s)</h2>
-              <div className="logs-actions">
-                <button className="btn btn-sm btn-secondary" onClick={loadLogs}>
-                  🔄 Rafraîchir
-                </button>
-                <button className="btn btn-sm btn-danger" onClick={clearLogs}>
-                  🗑️ Effacer
-                </button>
-              </div>
-            </div>
-
-            <div className="logs-content">
-              {logs.length === 0 ? (
-                <div className="logs-empty">
-                  <p>Aucun log disponible</p>
-                </div>
-              ) : (
-                <div className="logs-list">
-                  {logs.map((log, index) => (
-                    <div
-                      key={index}
-                      className={`log-entry log-${log.level}`}
-                    >
-                      <div className="log-header-entry">
-                        <span className={`log-level log-level-${log.level}`}>
-                          {log.level.toUpperCase()}
-                        </span>
-                        <span className="log-timestamp">
-                          {new Date(log.timestamp).toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="log-message">{log.message}</div>
-                      {log.error && (
-                        <div className="log-error">
-                          <pre>{log.fullLog}</pre>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         )}
 
@@ -706,10 +618,12 @@ function App() {
                 )}
 
                 <div className="form-group">
-                  <label>Ce que vous voulez dans le rapport (optionnel)</label>
+                  <label>Sujet du rapport (optionnel)</label>
                   <textarea
                     rows="3"
-                    placeholder="Ex: Focus sur les problèmes techniques, les réclamations, le taux de satisfaction..."
+                    placeholder="Ex: Problèmes techniques, Réclamations, Délais de livraison...
+Si vide : analyse générale de toutes les conversations.
+Si rempli : rapport UNIQUEMENT sur ce sujet spécifique."
                     value={reportOptions.preferences}
                     onChange={(e) => setReportOptions({ ...reportOptions, preferences: e.target.value })}
                   />
