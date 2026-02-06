@@ -188,6 +188,11 @@
   font-size: 1.5rem;
 }
 
+.agent-header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .agent-info {
   margin-bottom: 1.5rem;
 }
@@ -797,6 +802,11 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
+.document-item-existing {
+  background: #fffaf0;
+  border-color: #fbd38d;
+}
+
 .document-name {
   font-size: 0.875rem;
   color: #4a5568;
@@ -804,6 +814,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.document-badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  background: #ed8936;
+  color: white;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 .document-remove-btn {

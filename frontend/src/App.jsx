@@ -19,6 +19,7 @@ const WIDGET_COLORS = [
 function App() {
   const [agents, setAgents] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingAgent, setEditingAgent] = useState(null);
   const [formData, setFormData] = useState({
     prompt: '',
     email: '',
@@ -114,10 +115,21 @@ function App() {
         allDocs.push({ name: 'Documentation manuelle', content: manualDocText.trim() });
       }
 
-      const response = await axios.post('/api/agents', { ...formData, documents: allDocs });
+      const payload = { ...formData, documents: allDocs };
+      let response;
+
+      if (editingAgent) {
+        // Mode édition - PUT
+        response = await axios.put(`/api/agents/${editingAgent}`, payload);
+      } else {
+        // Mode création - POST
+        response = await axios.post('/api/agents', payload);
+      }
+
       setFormData({ prompt: '', email: '', color: '#667eea' });
       setDocuments([]);
       setManualDocText('');
+      setEditingAgent(null);
       setShowForm(false);
       loadAgents();
 
@@ -127,12 +139,33 @@ function App() {
           message: `Agent créé avec avertissement: ${response.data.warning}`
         });
       } else {
-        setNotification({ type: 'success', message: 'Agent créé avec succès!' });
+        setNotification({ type: 'success', message: editingAgent ? 'Agent modifié avec succès!' : 'Agent créé avec succès!' });
       }
     } catch (error) {
-      console.error('Erreur lors de la création de l\'agent:', error);
-      const errorMsg = error.response?.data?.details || error.message || 'Erreur lors de la création de l\'agent';
+      console.error(editingAgent ? 'Erreur lors de la modification de l\'agent:' : 'Erreur lors de la création de l\'agent:', error);
+      const errorMsg = error.response?.data?.details || error.message || (editingAgent ? 'Erreur lors de la modification' : 'Erreur lors de la création');
       setNotification({ type: 'error', message: `Erreur: ${errorMsg}` });
+    }
+  };
+
+  const handleEditAgent = async (agent) => {
+    try {
+      // Charger les documents existants
+      const docsResponse = await axios.get(`/api/agents/${agent.id}/documents`);
+      const existingDocs = docsResponse.data.documents.map(name => ({ name, content: '', existing: true }));
+
+      setFormData({
+        prompt: agent.prompt,
+        email: agent.email,
+        color: agent.widget_color || '#667eea'
+      });
+      setDocuments(existingDocs);
+      setManualDocText('');
+      setEditingAgent(agent.id);
+      setShowForm(true);
+    } catch (error) {
+      console.error('Erreur lors du chargement de l\'agent:', error);
+      setNotification({ type: 'error', message: 'Erreur lors du chargement de l\'agent' });
     }
   };
 
@@ -147,6 +180,9 @@ function App() {
       return;
     }
 
+    // En mode édition, supprimer les documents existants (ils seront remplacés au submit)
+    const nonExistingDocs = documents.filter(d => !d.existing);
+
     const ext = file.name.split('.').pop().toLowerCase();
     const textFormats = ['txt', 'md', 'csv', 'json'];
 
@@ -154,7 +190,7 @@ function App() {
       // Formats texte : lecture directe en navigateur
       const reader = new FileReader();
       reader.onload = (event) => {
-        setDocuments(prev => [...prev, { name: file.name, content: event.target.result }]);
+        setDocuments(prev => [...nonExistingDocs, { name: file.name, content: event.target.result }]);
       };
       reader.onerror = () => {
         setNotification({ type: 'error', message: 'Erreur lors de la lecture du fichier' });
@@ -167,7 +203,7 @@ function App() {
         const payload = new FormData();
         payload.append('file', file);
         const response = await axios.post('/api/docs/extract', payload);
-        setDocuments(prev => [...prev, { name: file.name, content: response.data.text }]);
+        setDocuments(prev => [...nonExistingDocs, { name: file.name, content: response.data.text }]);
       } catch (error) {
         const errorMsg = error.response?.data?.error || error.message;
         setNotification({ type: 'error', message: `Extraction échouée : ${errorMsg}` });
@@ -179,6 +215,14 @@ function App() {
 
   const handleRemoveDocument = (docName) => {
     setDocuments(prev => prev.filter(d => d.name !== docName));
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingAgent(null);
+    setFormData({ prompt: '', email: '', color: '#667eea' });
+    setDocuments([]);
+    setManualDocText('');
   };
 
   const handleDelete = async (id) => {
@@ -357,7 +401,7 @@ function App() {
         <div className="actions">
           <button
             className="btn btn-primary"
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => showForm ? handleCancelForm() : setShowForm(true)}
           >
             {showForm ? 'Annuler' : '+ Créer un Agent'}
           </button>
@@ -390,7 +434,7 @@ function App() {
 
         {showForm && (
           <div className="form-card">
-            <h2>Nouvel Agent</h2>
+            <h2>{editingAgent ? `Modifier l'agent #${editingAgent}` : 'Nouvel Agent'}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Prompt du Chatbot *</label>
@@ -424,15 +468,18 @@ function App() {
 
                 {documents.length > 0 && (
                   <div className="documents-list">
-                    <strong>{documents.length} document{documents.length > 1 ? 's' : ''} chargé{documents.length > 1 ? 's' : ''} :</strong>
+                    <strong>{documents.length} document{documents.length > 1 ? 's' : ''} {editingAgent ? '(existants + nouveaux)' : 'chargé' + (documents.length > 1 ? 's' : '')} :</strong>
                     {documents.map((doc, i) => (
-                      <div key={i} className="document-item">
-                        <span className="document-name">📄 {doc.name}</span>
+                      <div key={i} className={`document-item${doc.existing ? ' document-item-existing' : ''}`}>
+                        <span className="document-name">
+                          {doc.existing ? '📦' : '📄'} {doc.name}
+                          {doc.existing && <span className="document-badge">existant</span>}
+                        </span>
                         <button
                           type="button"
                           className="document-remove-btn"
                           onClick={() => handleRemoveDocument(doc.name)}
-                          title="Supprimer ce document"
+                          title={doc.existing ? "Supprimer ce document (sera supprimé à l'enregistrement)" : "Supprimer ce document"}
                         >
                           ×
                         </button>
@@ -540,12 +587,20 @@ function App() {
             <div key={agent.id} className="agent-card">
               <div className="agent-header">
                 <h3><span className="agent-color-dot" style={{ backgroundColor: agent.widget_color || '#667eea' }}></span>Agent #{agent.id}</h3>
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={() => handleDelete(agent.id)}
-                >
-                  Supprimer
-                </button>
+                <div className="agent-header-actions">
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => handleEditAgent(agent)}
+                  >
+                    ✏️ Modifier
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleDelete(agent.id)}
+                  >
+                    🗑️ Supprimer
+                  </button>
+                </div>
               </div>
 
               <div className="agent-info">

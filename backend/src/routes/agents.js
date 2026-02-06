@@ -1,6 +1,7 @@
 import express from 'express';
 import Agent from '../models/Agent.js';
 import RAGService from '../services/ragService.js';
+import Embedding from '../models/Embedding.js';
 
 const router = express.Router();
 
@@ -74,10 +75,25 @@ router.get('/:id', (req, res) => {
   }
 });
 
+// Récupérer la liste des documents d'un agent
+router.get('/:id/documents', (req, res) => {
+  try {
+    const agent = Agent.findById(req.params.id);
+    if (!agent) {
+      return res.status(404).json({ error: 'Agent non trouvé' });
+    }
+    const documentNames = Embedding.getDocumentNames(req.params.id);
+    res.json({ documents: documentNames });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des documents:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // Mettre à jour un agent
 router.put('/:id', async (req, res) => {
   try {
-    const { prompt, documentation, email, color } = req.body;
+    const { prompt, documentation, documents, email, color } = req.body;
     const agentId = req.params.id;
 
     const agent = Agent.findById(agentId);
@@ -87,15 +103,17 @@ router.put('/:id', async (req, res) => {
 
     Agent.update(agentId, {
       prompt: prompt || agent.prompt,
-      documentation: documentation !== undefined ? documentation : agent.documentation,
+      documentation: '', // On ne stocke plus la doc en DB
       email: email || agent.email,
       color: color || agent.widget_color
     });
 
-    // Ré-indexer la documentation si elle a changé
-    if (documentation !== undefined) {
+    // Ré-indexer la documentation si des documents sont fournis
+    const docsToIndex = documents || (documentation ? [{ name: 'Documentation', content: documentation }] : null);
+
+    if (docsToIndex && docsToIndex.length > 0) {
       try {
-        await RAGService.indexDocumentation(agentId, documentation);
+        await RAGService.indexDocumentation(agentId, docsToIndex);
       } catch (ragError) {
         console.error('Erreur lors de la ré-indexation RAG:', ragError);
         return res.status(200).json({
