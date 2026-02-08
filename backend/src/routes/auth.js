@@ -27,6 +27,9 @@ router.post('/register', async (req, res) => {
     // Créer l'utilisateur
     const userId = User.create({ email, password, name });
 
+    // Mettre à jour last_activity à la création
+    User.updateActivity(userId);
+
     // Générer un token
     const token = generateToken(userId, email);
 
@@ -65,6 +68,9 @@ router.post('/login', async (req, res) => {
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
+
+    // Mettre à jour last_activity à la connexion
+    User.updateActivity(user.id);
 
     // Générer un token
     const token = generateToken(user.id, user.email);

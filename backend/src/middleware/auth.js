@@ -4,7 +4,7 @@ import User from '../models/User.js';
 // Clé secrète JWT (dans un vrai projet, cela devrait être dans .env)
 const JWT_SECRET = process.env.JWT_SECRET || 'votre-cle-secrete-super-secure-changez-moi';
 
-// Middleware d'authentification
+// Middleware d'authentification avec vérification d'inactivité
 export const authenticateToken = (req, res, next) => {
   // Récupérer le token depuis le header Authorization
   const authHeader = req.headers['authorization'];
@@ -23,6 +23,24 @@ export const authenticateToken = (req, res, next) => {
     if (!user) {
       return res.status(401).json({ error: 'Utilisateur non trouvé.' });
     }
+
+    // Vérifier l'inactivité (7 jours = 604800000 ms)
+    const lastActivity = User.getLastActivity(decoded.userId);
+    if (lastActivity) {
+      const lastActivityDate = new Date(lastActivity);
+      const now = new Date();
+      const inactiveDays = (now - lastActivityDate) / (1000 * 60 * 60 * 24);
+
+      if (inactiveDays > 7) {
+        return res.status(401).json({
+          error: 'Session expirée pour inactivité. Veuillez vous reconnecter.',
+          reason: 'inactivity'
+        });
+      }
+    }
+
+    // Mettre à jour la dernière activité
+    User.updateActivity(decoded.userId);
 
     // Ajouter les infos utilisateur à la requête
     req.user = {

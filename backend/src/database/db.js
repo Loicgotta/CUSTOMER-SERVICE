@@ -86,6 +86,13 @@ try {
   // Colonne déjà existe
 }
 
+// Migration : ajouter last_activity aux users pour gérer l'inactivité
+try {
+  db.exec("ALTER TABLE users ADD COLUMN last_activity DATETIME DEFAULT CURRENT_TIMESTAMP");
+} catch (e) {
+  // Colonne déjà existe
+}
+
 console.log('Database initialized successfully');
 
 export default db;

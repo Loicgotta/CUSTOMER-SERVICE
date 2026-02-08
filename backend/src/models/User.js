@@ -59,6 +59,21 @@ class User {
     const stmt = db.prepare('DELETE FROM users WHERE id = ?');
     return stmt.run(id);
   }
+
+  static updateActivity(userId) {
+    const stmt = db.prepare(`
+      UPDATE users
+      SET last_activity = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+    return stmt.run(userId);
+  }
+
+  static getLastActivity(userId) {
+    const stmt = db.prepare('SELECT last_activity FROM users WHERE id = ?');
+    const result = stmt.get(userId);
+    return result?.last_activity;
+  }
 }
 
 export default User;
