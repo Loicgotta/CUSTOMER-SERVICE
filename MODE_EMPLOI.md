@@ -4,12 +4,57 @@
 
 Cette plateforme vous permet de créer et gérer des agents de service client propulsés par l'intelligence artificielle. Chaque agent peut être personnalisé avec ses propres instructions et sa propre documentation.
 
+**Chaque utilisateur a son propre compte sécurisé.** Vos agents et toutes vos données sont privés et accessibles uniquement par vous, depuis n'importe quel appareil, tant que vous êtes connecté à votre compte.
+
+---
+
+## 🔐 Créer un Compte et Se Connecter
+
+### Première visite : Créer un compte
+
+Lors de votre première visite, vous devez créer un compte :
+
+1. **Accédez à la plateforme** via l'adresse fournie par votre administrateur
+2. Vous arrivez sur la page de connexion
+3. Cliquez sur **"Créer un compte"** en bas de la page
+4. Remplissez le formulaire d'inscription :
+   - **Nom complet** : Votre prénom et nom (ex: Jean Dupont)
+   - **Email** : Votre adresse email professionnelle
+   - **Mot de passe** : Minimum 6 caractères (choisissez un mot de passe sécurisé)
+5. Cliquez sur **"Créer mon compte"**
+
+✅ Votre compte est créé ! Vous êtes automatiquement connecté et redirigé vers le tableau de bord.
+
+### Visites suivantes : Se connecter
+
+Pour accéder à nouveau à la plateforme :
+
+1. Rendez-vous sur l'adresse de la plateforme
+2. La page de connexion s'affiche
+3. Saisissez votre **email** et votre **mot de passe**
+4. Cliquez sur **"Se connecter"**
+
+✅ Vous êtes connecté ! Vous retrouvez tous vos agents exactement comme vous les aviez laissés.
+
+### 💡 Bon à savoir
+
+- **Votre session reste active pendant 7 jours** - Vous n'avez pas besoin de vous reconnecter à chaque fois
+- **Données privées** - Chaque utilisateur voit uniquement ses propres agents et rapports
+- **Accès partout** - Connectez-vous depuis n'importe quel ordinateur ou appareil
+- **Déconnexion** - Cliquez sur "Déconnexion" en haut à droite pour vous déconnecter
+
+### ⚠️ Mot de passe oublié ?
+
+Si vous oubliez votre mot de passe, contactez l'administrateur de la plateforme pour réinitialiser votre compte.
+
 ---
 
 ## 🚀 Démarrage Rapide
 
-### Étape 1 : Accéder à la plateforme
-Ouvrez votre navigateur et accédez à l'adresse de la plateforme. Vous arrivez sur le tableau de bord principal.
+Une fois connecté :
+
+### Étape 1 : Vous êtes sur le tableau de bord
+Le tableau de bord affiche tous vos agents. En haut à droite, vous voyez votre nom et un bouton "Déconnexion".
 
 ### Étape 2 : Créer votre premier agent
 Cliquez sur le bouton **"+ Créer un Agent"** en haut de la page.
