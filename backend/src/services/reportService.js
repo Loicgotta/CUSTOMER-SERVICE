@@ -187,14 +187,14 @@ ${conversationsText}`
     return r;
   }
 
-  static async sendReport(agentId, { startDate, endDate, preferences } = {}) {
+  static async sendReport(agentId, { startDate, endDate, preferences } = {}, userId = null) {
     try {
       Logger.info(`Préparation de l'envoi du rapport pour l'agent ${agentId}`);
 
-      const agent = Agent.findById(agentId);
+      const agent = Agent.findById(agentId, userId);
       if (!agent) {
-        Logger.error(`Agent ${agentId} non trouvé`);
-        return { success: false, error: 'Agent non trouvé' };
+        Logger.error(`Agent ${agentId} non trouvé ou non autorisé pour l'utilisateur ${userId}`);
+        return { success: false, error: 'Agent non trouvé ou non autorisé' };
       }
 
       Logger.info(`Agent trouvé: ${agent.email}`);

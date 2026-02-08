@@ -17,12 +17,22 @@ const db = new Database(path.join(dataDir, 'chatbot.db'));
 
 // Créer les tables
 db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    name TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS agents (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
     prompt TEXT NOT NULL,
     documentation TEXT,
     email TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS conversations (
@@ -65,6 +75,13 @@ try {
 // Migration : ajouter document_name aux embeddings
 try {
   db.exec("ALTER TABLE embeddings ADD COLUMN document_name TEXT DEFAULT 'Documentation'");
+} catch (e) {
+  // Colonne déjà existe
+}
+
+// Migration : ajouter user_id aux agents existants
+try {
+  db.exec("ALTER TABLE agents ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE");
 } catch (e) {
   // Colonne déjà existe
 }

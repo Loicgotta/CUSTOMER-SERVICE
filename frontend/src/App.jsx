@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import Login from './Login';
 import './App.css';
 
 const WIDGET_COLORS = [
@@ -17,6 +18,10 @@ const WIDGET_COLORS = [
 ];
 
 function App() {
+  // Authentification
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
   const [agents, setAgents] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingAgent, setEditingAgent] = useState(null);
@@ -58,10 +63,40 @@ function App() {
     }
   }, [notification]);
 
-  // Charger les agents au démarrage
+  // Vérifier l'authentification au démarrage
   useEffect(() => {
-    loadAgents();
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+
+    if (token && userData) {
+      // Configurer axios pour envoyer le token dans toutes les requêtes
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setUser(JSON.parse(userData));
+      setAuthChecked(true);
+    } else {
+      setAuthChecked(true);
+    }
   }, []);
+
+  // Charger les agents une fois authentifié
+  useEffect(() => {
+    if (user) {
+      loadAgents();
+    }
+  }, [user]);
+
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    delete axios.defaults.headers.common['Authorization'];
+    setUser(null);
+    setAgents([]);
+    setNotification({ type: 'success', message: 'Déconnexion réussie' });
+  };
 
   const loadAgents = async () => {
     try {
@@ -69,6 +104,10 @@ function App() {
       setAgents(response.data);
     } catch (error) {
       console.error('Erreur lors du chargement des agents:', error);
+      // Si erreur 401, déconnecter l'utilisateur
+      if (error.response?.status === 401) {
+        handleLogout();
+      }
     }
   };
 
@@ -355,12 +394,35 @@ function App() {
     );
   }
 
+  // --- Afficher Login si non authentifié ---
+  if (!authChecked) {
+    return (
+      <div className="app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <p>Chargement...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
   // --- Vue Dashboard ---
   return (
     <div className="app">
       <header className="header">
-        <h1>🤖 Plateforme de Chatbots Service Client</h1>
-        <p>Créez et gérez vos agents de service client intelligents</p>
+        <div className="header-content">
+          <div>
+            <h1>🤖 Plateforme de Chatbots Service Client</h1>
+            <p>Créez et gérez vos agents de service client intelligents</p>
+          </div>
+          <div className="header-user">
+            <span className="user-name">👤 {user.name}</span>
+            <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
+              Déconnexion
+            </button>
+          </div>
+        </div>
       </header>
 
       <div className="container">

@@ -7,8 +7,10 @@ import { fileURLToPath } from 'url';
 import agentsRouter from './routes/agents.js';
 import chatRouter from './routes/chat.js';
 import docsRouter from './routes/docs.js';
+import authRouter from './routes/auth.js';
 import ReportService from './services/reportService.js';
 import Logger from './utils/logger.js';
+import { authenticateToken } from './middleware/auth.js';
 import './database/db.js'; // Initialiser la DB
 
 dotenv.config();
@@ -39,17 +41,18 @@ const frontendPath = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendPath));
 
 // Routes API
-app.use('/api/agents', agentsRouter);
-app.use('/api/chat', chatRouter);
-app.use('/api/docs', docsRouter);
+app.use('/api/auth', authRouter); // Routes d'authentification (publiques)
+app.use('/api/agents', authenticateToken, agentsRouter); // Protégé
+app.use('/api/chat', chatRouter); // Public (pour les visiteurs du widget)
+app.use('/api/docs', authenticateToken, docsRouter); // Protégé
 
-// Route pour envoyer manuellement un rapport
-app.post('/api/reports/send/:agentId', async (req, res) => {
+// Route pour envoyer manuellement un rapport (protégée)
+app.post('/api/reports/send/:agentId', authenticateToken, async (req, res) => {
   try {
     const { startDate, endDate, preferences } = req.body || {};
-    Logger.info(`Requête rapport agent ${req.params.agentId} | Dates: ${startDate || 'toutes'} → ${endDate || 'toutes'} | Prefs: ${preferences || 'aucune'}`);
+    Logger.info(`Requête rapport agent ${req.params.agentId} | User: ${req.user.email} | Dates: ${startDate || 'toutes'} → ${endDate || 'toutes'} | Prefs: ${preferences || 'aucune'}`);
 
-    const result = await ReportService.sendReport(req.params.agentId, { startDate, endDate, preferences });
+    const result = await ReportService.sendReport(req.params.agentId, { startDate, endDate, preferences }, req.user.userId);
 
     if (result.success) {
       Logger.success(`Rapport envoyé avec succès à ${result.email}`);
