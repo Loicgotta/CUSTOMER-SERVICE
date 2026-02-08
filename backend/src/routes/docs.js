@@ -6,7 +6,8 @@ import { createRequire } from 'module';
 
 // pdf-parse ne supporte pas l'import ESM natif
 const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+const pdfParseModule = require('pdf-parse');
+const pdfParse = pdfParseModule.default || pdfParseModule;
 
 const router = express.Router();
 
