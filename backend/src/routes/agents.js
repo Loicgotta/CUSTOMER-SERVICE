@@ -2,6 +2,7 @@ import express from 'express';
 import Agent from '../models/Agent.js';
 import RAGService from '../services/ragService.js';
 import Embedding from '../models/Embedding.js';
+import Conversation from '../models/Conversation.js';
 
 const router = express.Router();
 
@@ -151,8 +152,16 @@ router.delete('/:id', (req, res) => {
       return res.status(404).json({ error: 'Agent non trouvé ou non autorisé' });
     }
 
+    // Supprimer les embeddings associés
+    Embedding.deleteByAgentId(req.params.id);
+
+    // Supprimer les conversations associées
+    Conversation.deleteByAgentId(req.params.id);
+
+    // Supprimer l'agent
     Agent.delete(req.params.id, req.user.userId);
-    res.json({ message: 'Agent supprimé' });
+
+    res.json({ message: 'Agent supprimé avec toutes ses données' });
   } catch (error) {
     console.error('Erreur lors de la suppression de l\'agent:', error);
     res.status(500).json({ error: 'Erreur serveur' });

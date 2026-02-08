@@ -32,6 +32,7 @@ function App() {
   });
   const [documents, setDocuments] = useState([]);
   const [manualDocText, setManualDocText] = useState('');
+  const [manualDocName, setManualDocName] = useState('');
   const [sendingReport, setSendingReport] = useState(null);
   const [notification, setNotification] = useState(null);
   const [docExtracting, setDocExtracting] = useState(false);
@@ -117,7 +118,8 @@ function App() {
       // Ajouter la documentation manuelle si présente
       const allDocs = [...documents];
       if (manualDocText.trim()) {
-        allDocs.push({ name: 'Documentation manuelle', content: manualDocText.trim() });
+        const docName = manualDocName.trim() || 'Documentation';
+        allDocs.push({ name: docName, content: manualDocText.trim() });
       }
 
       const payload = { ...formData, documents: allDocs };
@@ -134,6 +136,7 @@ function App() {
       setFormData({ prompt: '', email: '', color: '#667eea' });
       setDocuments([]);
       setManualDocText('');
+      setManualDocName('');
       setEditingAgent(null);
       setShowForm(false);
       loadAgents();
@@ -166,6 +169,7 @@ function App() {
       });
       setDocuments(existingDocs);
       setManualDocText('');
+      setManualDocName('');
       setEditingAgent(agent.id);
       setShowForm(true);
     } catch (error) {
@@ -228,6 +232,7 @@ function App() {
     setFormData({ prompt: '', email: '', color: '#667eea' });
     setDocuments([]);
     setManualDocText('');
+    setManualDocName('');
   };
 
   const handleDelete = async (id) => {
@@ -511,6 +516,13 @@ function App() {
                 )}
 
                 <div className="or-divider">ou saisissez directement</div>
+                <input
+                  type="text"
+                  placeholder="Nom du document (optionnel, ex: FAQ, Guide utilisateur...)"
+                  value={manualDocName}
+                  onChange={(e) => setManualDocName(e.target.value)}
+                  style={{ marginBottom: '0.5rem' }}
+                />
                 <textarea
                   rows="6"
                   placeholder="Collez ici votre documentation produit, FAQ, etc. Elle sera indexée et utilisée par l'agent pour répondre aux questions."
