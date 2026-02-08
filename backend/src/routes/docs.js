@@ -5,14 +5,9 @@ import XLSX from 'xlsx';
 import { createRequire } from 'module';
 import Logger from '../utils/logger.js';
 
-// pdf-parse ne supporte pas l'import ESM natif
+// pdf-parse ne supporte pas l'import ESM natif - on utilise require
 const require = createRequire(import.meta.url);
-const pdfParseModule = require('pdf-parse');
-
-// Le module pdf-parse peut s'utiliser directement ou via PDFParse
-// On va tester les deux approches
-Logger.info(`📄 [INIT] Type de pdfParseModule: ${typeof pdfParseModule}`);
-Logger.info(`📄 [INIT] Keys de pdfParseModule: ${Object.keys(pdfParseModule).join(', ')}`);
+const pdfParse = require('pdf-parse');
 
 const router = express.Router();
 
@@ -42,66 +37,9 @@ router.post('/extract', upload.single('file'), async (req, res) => {
     switch (ext) {
       case 'pdf': {
         Logger.info('📄 [DOCS] Début extraction PDF...');
-
-        let data;
-        let success = false;
-
-        // Approche 1: Utiliser le module directement comme fonction
-        if (!success && typeof pdfParseModule === 'function') {
-          try {
-            Logger.info('📄 [DOCS] Tentative 1: pdfParseModule(buffer)');
-            data = await pdfParseModule(buffer);
-            success = true;
-            Logger.success('📄 [DOCS] Approche 1 réussie !');
-          } catch (e) {
-            Logger.warning(`📄 [DOCS] Approche 1 échouée: ${e.message}`);
-          }
-        }
-
-        // Approche 2: Utiliser PDFParse si disponible
-        if (!success && pdfParseModule.PDFParse) {
-          try {
-            Logger.info('📄 [DOCS] Tentative 2: new pdfParseModule.PDFParse()');
-            const parser = new pdfParseModule.PDFParse();
-            data = await parser.parse(buffer);
-            success = true;
-            Logger.success('📄 [DOCS] Approche 2 réussie !');
-          } catch (e) {
-            Logger.warning(`📄 [DOCS] Approche 2 échouée: ${e.message}`);
-          }
-        }
-
-        // Approche 3: Utiliser PDFParse comme fonction statique
-        if (!success && pdfParseModule.PDFParse && typeof pdfParseModule.PDFParse === 'function') {
-          try {
-            Logger.info('📄 [DOCS] Tentative 3: pdfParseModule.PDFParse(buffer)');
-            data = await pdfParseModule.PDFParse(buffer);
-            success = true;
-            Logger.success('📄 [DOCS] Approche 3 réussie !');
-          } catch (e) {
-            Logger.warning(`📄 [DOCS] Approche 3 échouée: ${e.message}`);
-          }
-        }
-
-        // Approche 4: Chercher une méthode parse
-        if (!success && pdfParseModule.parse && typeof pdfParseModule.parse === 'function') {
-          try {
-            Logger.info('📄 [DOCS] Tentative 4: pdfParseModule.parse(buffer)');
-            data = await pdfParseModule.parse(buffer);
-            success = true;
-            Logger.success('📄 [DOCS] Approche 4 réussie !');
-          } catch (e) {
-            Logger.warning(`📄 [DOCS] Approche 4 échouée: ${e.message}`);
-          }
-        }
-
-        if (!success) {
-          Logger.error('📄 [DOCS] Toutes les approches ont échoué');
-          throw new Error('Impossible d\'extraire le PDF avec aucune des méthodes disponibles');
-        }
-
+        const data = await pdfParse(buffer);
         text = data.text;
-        Logger.success(`📄 [DOCS] PDF extrait: ${text.length} caractères`);
+        Logger.success(`📄 [DOCS] PDF extrait: ${text.length} caractères, ${data.numpages} page(s)`);
         break;
       }
       case 'docx': {
