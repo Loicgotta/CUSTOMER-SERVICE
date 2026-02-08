@@ -1,3 +1,4 @@
+import Logger from '../utils/logger.js';
 import express from 'express';
 import Agent from '../models/Agent.js';
 import RAGService from '../services/ragService.js';
@@ -8,23 +9,23 @@ const router = express.Router();
 
 // Créer un nouvel agent
 router.post('/', async (req, res) => {
-  console.log('🤖 [AGENT] Début création d\'agent');
+  Logger.info('🤖 [AGENT] Début création d\'agent');
 
   try {
     const { prompt, documentation, documents, email, color } = req.body;
-    console.log(`🤖 [AGENT] User ID: ${req.user.userId}`);
-    console.log(`🤖 [AGENT] Email: ${email}`);
-    console.log(`🤖 [AGENT] Prompt length: ${prompt?.length || 0} caractères`);
-    console.log(`🤖 [AGENT] Documents: ${documents ? documents.length : 0}`);
-    console.log(`🤖 [AGENT] Couleur: ${color || '#667eea'}`);
+    Logger.info(`🤖 [AGENT] User ID: ${req.user.userId}`);
+    Logger.info(`🤖 [AGENT] Email: ${email}`);
+    Logger.info(`🤖 [AGENT] Prompt length: ${prompt?.length || 0} caractères`);
+    Logger.info(`🤖 [AGENT] Documents: ${documents ? documents.length : 0}`);
+    Logger.info(`🤖 [AGENT] Couleur: ${color || '#667eea'}`);
 
     if (!prompt || !email) {
-      console.log('❌ [AGENT] Prompt ou email manquant');
+      Logger.info('❌ [AGENT] Prompt ou email manquant');
       return res.status(400).json({ error: 'Prompt et email sont requis' });
     }
 
     // Créer l'agent lié à l'utilisateur connecté
-    console.log('🤖 [AGENT] Création de l\'agent dans la DB...');
+    Logger.info('🤖 [AGENT] Création de l\'agent dans la DB...');
     const agentId = Agent.create({
       userId: req.user.userId,
       prompt,
@@ -32,23 +33,23 @@ router.post('/', async (req, res) => {
       email,
       color
     });
-    console.log(`✅ [AGENT] Agent créé avec ID: ${agentId}`);
+    Logger.info(`✅ [AGENT] Agent créé avec ID: ${agentId}`);
 
     // Indexer la documentation si elle existe (nouveau format ou legacy)
     const docsToIndex = documents || (documentation ? [{ name: 'Documentation', content: documentation }] : null);
 
     if (docsToIndex && docsToIndex.length > 0) {
-      console.log(`📚 [AGENT] Indexation de ${docsToIndex.length} document(s)...`);
+      Logger.info(`📚 [AGENT] Indexation de ${docsToIndex.length} document(s)...`);
       docsToIndex.forEach((doc, i) => {
-        console.log(`📚 [AGENT]   Doc ${i + 1}: ${doc.name} (${doc.content?.length || 0} caractères)`);
+        Logger.info(`📚 [AGENT]   Doc ${i + 1}: ${doc.name} (${doc.content?.length || 0} caractères)`);
       });
 
       try {
         await RAGService.indexDocumentation(agentId, docsToIndex);
-        console.log('✅ [AGENT] Indexation terminée avec succès');
+        Logger.info('✅ [AGENT] Indexation terminée avec succès');
       } catch (ragError) {
-        console.error('❌ [AGENT] Erreur lors de l\'indexation RAG:', ragError);
-        console.error('❌ [AGENT] Stack:', ragError.stack);
+        Logger.error('❌ [AGENT] Erreur lors de l\'indexation RAG:', ragError);
+        Logger.error('❌ [AGENT] Stack:', ragError.stack);
         // L'agent est créé mais la documentation n'est pas indexée
         return res.status(201).json({
           id: agentId,
@@ -58,18 +59,18 @@ router.post('/', async (req, res) => {
         });
       }
     } else {
-      console.log('📚 [AGENT] Aucun document à indexer');
+      Logger.info('📚 [AGENT] Aucun document à indexer');
     }
 
-    console.log('✅ [AGENT] Agent créé avec succès !');
+    Logger.info('✅ [AGENT] Agent créé avec succès !');
     res.status(201).json({
       id: agentId,
       message: 'Agent créé avec succès',
       agent: Agent.findById(agentId, req.user.userId)
     });
   } catch (error) {
-    console.error('❌ [AGENT] Erreur lors de la création de l\'agent:', error);
-    console.error('❌ [AGENT] Stack:', error.stack);
+    Logger.error('❌ [AGENT] Erreur lors de la création de l\'agent:', error);
+    Logger.error('❌ [AGENT] Stack:', error.stack);
     res.status(500).json({
       error: 'Erreur serveur',
       details: error.message,
@@ -84,7 +85,7 @@ router.get('/', (req, res) => {
     const agents = Agent.findAll(req.user.userId);
     res.json(agents);
   } catch (error) {
-    console.error('Erreur lors de la récupération des agents:', error);
+    Logger.error('Erreur lors de la récupération des agents:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -98,7 +99,7 @@ router.get('/:id', (req, res) => {
     }
     res.json(agent);
   } catch (error) {
-    console.error('Erreur lors de la récupération de l\'agent:', error);
+    Logger.error('Erreur lors de la récupération de l\'agent:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -113,7 +114,7 @@ router.get('/:id/documents', (req, res) => {
     const documentNames = Embedding.getDocumentNames(req.params.id);
     res.json({ documents: documentNames });
   } catch (error) {
-    console.error('Erreur lors de la récupération des documents:', error);
+    Logger.error('Erreur lors de la récupération des documents:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
@@ -143,7 +144,7 @@ router.put('/:id', async (req, res) => {
       try {
         await RAGService.indexDocumentation(agentId, docsToIndex);
       } catch (ragError) {
-        console.error('Erreur lors de la ré-indexation RAG:', ragError);
+        Logger.error('Erreur lors de la ré-indexation RAG:', ragError);
         return res.status(200).json({
           message: 'Agent mis à jour mais erreur lors de l\'indexation',
           warning: ragError.message,
@@ -157,7 +158,7 @@ router.put('/:id', async (req, res) => {
       agent: Agent.findById(agentId, req.user.userId)
     });
   } catch (error) {
-    console.error('Erreur lors de la mise à jour de l\'agent:', error);
+    Logger.error('Erreur lors de la mise à jour de l\'agent:', error);
     res.status(500).json({
       error: 'Erreur serveur',
       details: error.message
@@ -184,7 +185,7 @@ router.delete('/:id', (req, res) => {
 
     res.json({ message: 'Agent supprimé avec toutes ses données' });
   } catch (error) {
-    console.error('Erreur lors de la suppression de l\'agent:', error);
+    Logger.error('Erreur lors de la suppression de l\'agent:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

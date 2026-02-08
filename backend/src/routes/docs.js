@@ -3,6 +3,7 @@ import multer from 'multer';
 import mammoth from 'mammoth';
 import XLSX from 'xlsx';
 import { createRequire } from 'module';
+import Logger from '../utils/logger.js';
 
 // pdf-parse ne supporte pas l'import ESM natif
 const require = createRequire(import.meta.url);
@@ -30,71 +31,72 @@ const upload = multer({
 });
 
 router.post('/extract', upload.single('file'), async (req, res) => {
-  console.log('📄 [DOCS] Début extraction de document');
+  Logger.info('📄 [DOCS] Début extraction de document');
 
   try {
     if (!req.file) {
-      console.log('❌ [DOCS] Aucun fichier reçu');
+      Logger.error('📄 [DOCS] Aucun fichier reçu');
       return res.status(400).json({ error: 'Aucun fichier envoyé' });
     }
 
     const { buffer, originalname, size } = req.file;
-    console.log(`📄 [DOCS] Fichier reçu: ${originalname} (${(size / 1024).toFixed(2)} KB)`);
+    Logger.info(`📄 [DOCS] Fichier reçu: ${originalname} (${(size / 1024).toFixed(2)} KB)`);
 
     const ext = originalname.split('.').pop().toLowerCase();
-    console.log(`📄 [DOCS] Extension détectée: .${ext}`);
+    Logger.info(`📄 [DOCS] Extension détectée: .${ext}`);
 
     let text = '';
 
     switch (ext) {
       case 'pdf': {
-        console.log('📄 [DOCS] Début extraction PDF...');
-        console.log(`📄 [DOCS] Type de pdfParse: ${typeof pdfParse}`);
-        console.log(`📄 [DOCS] Structure pdfParseModule:`, Object.keys(pdfParseModule));
-        console.log(`📄 [DOCS] pdfParseModule.default:`, typeof pdfParseModule.default);
+        Logger.info('📄 [DOCS] Début extraction PDF...');
+        Logger.info(`📄 [DOCS] Type de pdfParse: ${typeof pdfParse}`);
+        Logger.info(`📄 [DOCS] Structure pdfParseModule: ${Object.keys(pdfParseModule).join(', ')}`);
+        Logger.info(`📄 [DOCS] pdfParseModule.default: ${typeof pdfParseModule.default}`);
 
         if (typeof pdfParse !== 'function') {
-          throw new Error(`pdfParse n'est pas une fonction. Type: ${typeof pdfParse}, Keys: ${Object.keys(pdfParse || {})}`);
+          const errorMsg = `pdfParse n'est pas une fonction. Type: ${typeof pdfParse}, Keys: ${Object.keys(pdfParse || {}).join(', ')}`;
+          Logger.error(`📄 [DOCS] ${errorMsg}`);
+          throw new Error(errorMsg);
         }
 
         const data = await pdfParse(buffer);
         text = data.text;
-        console.log(`📄 [DOCS] PDF extrait: ${text.length} caractères`);
+        Logger.success(`📄 [DOCS] PDF extrait: ${text.length} caractères`);
         break;
       }
       case 'docx': {
-        console.log('📄 [DOCS] Début extraction DOCX...');
+        Logger.info('📄 [DOCS] Début extraction DOCX...');
         const result = await mammoth.extractRawText({ buffer });
         text = result.value;
-        console.log(`📄 [DOCS] DOCX extrait: ${text.length} caractères`);
+        Logger.success(`📄 [DOCS] DOCX extrait: ${text.length} caractères`);
         break;
       }
       case 'xlsx':
       case 'xls': {
-        console.log('📄 [DOCS] Début extraction XLSX...');
+        Logger.info('📄 [DOCS] Début extraction XLSX...');
         const workbook = XLSX.read(buffer, { type: 'buffer' });
         text = workbook.SheetNames.map(name => {
           const sheet = workbook.Sheets[name];
           return `--- Feuille : ${name} ---\n${XLSX.utils.sheet_to_csv(sheet)}`;
         }).join('\n\n');
-        console.log(`📄 [DOCS] XLSX extrait: ${text.length} caractères`);
+        Logger.success(`📄 [DOCS] XLSX extrait: ${text.length} caractères`);
         break;
       }
       default:
-        console.log(`❌ [DOCS] Format non supporté: .${ext}`);
+        Logger.error(`📄 [DOCS] Format non supporté: .${ext}`);
         return res.status(400).json({ error: `Format .${ext} non supporté` });
     }
 
     if (!text || text.trim().length === 0) {
-      console.log('❌ [DOCS] Aucun texte extrait du document');
+      Logger.error('📄 [DOCS] Aucun texte extrait du document');
       return res.status(400).json({ error: 'Aucun texte extrait du fichier' });
     }
 
-    console.log(`✅ [DOCS] Extraction réussie: ${text.trim().length} caractères`);
+    Logger.success(`📄 [DOCS] Extraction réussie: ${text.trim().length} caractères`);
     res.json({ text: text.trim() });
   } catch (error) {
-    console.error('❌ [DOCS] Erreur extraction texte:', error);
-    console.error('❌ [DOCS] Stack:', error.stack);
+    Logger.error('📄 [DOCS] Erreur extraction texte', error);
     res.status(500).json({ error: "Erreur lors de l'extraction du texte", details: error.message });
   }
 });
