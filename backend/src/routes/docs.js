@@ -7,7 +7,19 @@ import { createRequire } from 'module';
 // pdf-parse ne supporte pas l'import ESM natif
 const require = createRequire(import.meta.url);
 const pdfParseModule = require('pdf-parse');
-const pdfParse = pdfParseModule.default || pdfParseModule;
+
+// Gérer les différentes façons dont pdf-parse peut exporter
+let pdfParse;
+if (typeof pdfParseModule === 'function') {
+  pdfParse = pdfParseModule;
+} else if (typeof pdfParseModule.default === 'function') {
+  pdfParse = pdfParseModule.default;
+} else if (pdfParseModule.default && typeof pdfParseModule.default.default === 'function') {
+  pdfParse = pdfParseModule.default.default;
+} else {
+  // Chercher une fonction dans les propriétés
+  pdfParse = Object.values(pdfParseModule).find(val => typeof val === 'function') || pdfParseModule;
+}
 
 const router = express.Router();
 
@@ -38,6 +50,13 @@ router.post('/extract', upload.single('file'), async (req, res) => {
       case 'pdf': {
         console.log('📄 [DOCS] Début extraction PDF...');
         console.log(`📄 [DOCS] Type de pdfParse: ${typeof pdfParse}`);
+        console.log(`📄 [DOCS] Structure pdfParseModule:`, Object.keys(pdfParseModule));
+        console.log(`📄 [DOCS] pdfParseModule.default:`, typeof pdfParseModule.default);
+
+        if (typeof pdfParse !== 'function') {
+          throw new Error(`pdfParse n'est pas une fonction. Type: ${typeof pdfParse}, Keys: ${Object.keys(pdfParse || {})}`);
+        }
+
         const data = await pdfParse(buffer);
         text = data.text;
         console.log(`📄 [DOCS] PDF extrait: ${text.length} caractères`);
