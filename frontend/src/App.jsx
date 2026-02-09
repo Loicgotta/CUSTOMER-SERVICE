@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Login from './Login';
-import Logs from './Logs';
 import './App.css';
 
 const WIDGET_COLORS = [
@@ -22,9 +21,6 @@ function App() {
   // Authentification
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-
-  // Navigation
-  const [currentPage, setCurrentPage] = useState('dashboard'); // 'dashboard' ou 'logs'
 
   const [agents, setAgents] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -425,21 +421,7 @@ function App() {
             <h1>🤖 Plateforme de Chatbots Service Client</h1>
             <p>Créez et gérez vos agents de service client intelligents</p>
           </div>
-          <div className="header-user" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button
-                className={`btn btn-sm ${currentPage === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setCurrentPage('dashboard')}
-              >
-                📊 Dashboard
-              </button>
-              <button
-                className={`btn btn-sm ${currentPage === 'logs' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setCurrentPage('logs')}
-              >
-                📝 Logs
-              </button>
-            </div>
+          <div className="header-user">
             <span className="user-name">👤 {user.name}</span>
             <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
               Déconnexion
@@ -448,10 +430,6 @@ function App() {
         </div>
       </header>
 
-      {/* Afficher la page Logs ou le Dashboard */}
-      {currentPage === 'logs' ? (
-        <Logs />
-      ) : (
       <div className="container">
         <div className="actions">
           <button
@@ -741,7 +719,6 @@ Si rempli : rapport UNIQUEMENT sur ce sujet spécifique."
           </div>
         )}
       </div>
-      )}
     </div>
   );
 }
