@@ -8,6 +8,8 @@ import agentsRouter from './routes/agents.js';
 import chatRouter from './routes/chat.js';
 import docsRouter from './routes/docs.js';
 import authRouter from './routes/auth.js';
+import adminRouter, { requireAdmin } from './routes/admin.js';
+import promptRouter from './routes/prompt.js';
 import ReportService from './services/reportService.js';
 import Logger from './utils/logger.js';
 import { authenticateToken } from './middleware/auth.js';
@@ -45,6 +47,8 @@ app.use('/api/auth', authRouter); // Routes d'authentification (publiques)
 app.use('/api/agents', authenticateToken, agentsRouter); // Protégé
 app.use('/api/chat', chatRouter); // Public (pour les visiteurs du widget)
 app.use('/api/docs', authenticateToken, docsRouter); // Protégé
+app.use('/api/admin', authenticateToken, adminRouter); // Admin uniquement
+app.use('/api/prompt', authenticateToken, promptRouter); // Amélioration de prompt
 
 // Route pour envoyer manuellement un rapport (protégée)
 app.post('/api/reports/send/:agentId', authenticateToken, async (req, res) => {

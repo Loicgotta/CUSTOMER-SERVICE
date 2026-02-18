@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Login from './Login';
+import Admin from './Admin';
 import './App.css';
 
 const WIDGET_COLORS = [
@@ -46,6 +47,12 @@ function App() {
     preferences: ''
   });
 
+  // Admin
+  const [showAdmin, setShowAdmin] = useState(false);
+
+  // Amélioration prompt
+  const [enhancingPrompt, setEnhancingPrompt] = useState(false);
+
   // Chat de test
   const [testingAgent, setTestingAgent] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
@@ -88,6 +95,23 @@ function App() {
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
+  };
+
+  const handleEnhancePrompt = async () => {
+    if (!formData.prompt.trim()) {
+      setNotification({ type: 'warning', message: 'Écrivez un prompt avant de l\'améliorer' });
+      return;
+    }
+    setEnhancingPrompt(true);
+    try {
+      const response = await axios.post('/api/prompt/enhance', { prompt: formData.prompt });
+      setFormData(prev => ({ ...prev, prompt: response.data.enhanced }));
+      setNotification({ type: 'success', message: 'Prompt amélioré avec succès !' });
+    } catch (error) {
+      setNotification({ type: 'error', message: 'Erreur lors de l\'amélioration du prompt' });
+    } finally {
+      setEnhancingPrompt(false);
+    }
   };
 
   const handleLogout = () => {
@@ -423,6 +447,15 @@ function App() {
           </div>
           <div className="header-user">
             <span className="user-name">👤 {user.name}</span>
+            {user.is_admin && (
+              <button
+                className="btn btn-sm"
+                style={{ background: '#e53e3e', color: 'white' }}
+                onClick={() => setShowAdmin(!showAdmin)}
+              >
+                🛡️ Admin
+              </button>
+            )}
             <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
               Déconnexion
             </button>
@@ -430,6 +463,9 @@ function App() {
         </div>
       </header>
 
+      {showAdmin && user.is_admin ? (
+        <Admin onBack={() => setShowAdmin(false)} />
+      ) : (
       <div className="container">
         <div className="actions">
           <button
@@ -464,7 +500,30 @@ function App() {
             <h2>{editingAgent ? `Modifier l'agent #${editingAgent}` : 'Nouvel Agent'}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>Prompt du Chatbot *</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <label style={{ margin: 0 }}>Prompt du Chatbot *</label>
+                  <button
+                    type="button"
+                    onClick={handleEnhancePrompt}
+                    disabled={enhancingPrompt}
+                    style={{
+                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '0.4rem 1rem',
+                      fontSize: '0.85rem',
+                      fontWeight: '600',
+                      cursor: enhancingPrompt ? 'not-allowed' : 'pointer',
+                      opacity: enhancingPrompt ? 0.7 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem'
+                    }}
+                  >
+                    {enhancingPrompt ? '⏳ Amélioration...' : '✨ Améliorer le prompt'}
+                  </button>
+                </div>
                 <textarea
                   required
                   rows="4"
@@ -719,6 +778,7 @@ Si rempli : rapport UNIQUEMENT sur ce sujet spécifique."
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

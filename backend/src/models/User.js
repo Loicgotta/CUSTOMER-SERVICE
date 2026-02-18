@@ -16,7 +16,7 @@ class User {
   }
 
   static findById(id) {
-    const stmt = db.prepare('SELECT id, email, name, created_at FROM users WHERE id = ?');
+    const stmt = db.prepare('SELECT id, email, name, created_at, is_admin FROM users WHERE id = ?');
     return stmt.get(id);
   }
 

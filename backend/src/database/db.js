@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import bcrypt from 'bcryptjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -91,6 +92,34 @@ try {
   db.exec("ALTER TABLE users ADD COLUMN last_activity DATETIME DEFAULT CURRENT_TIMESTAMP");
 } catch (e) {
   // Colonne déjà existe
+}
+
+// Migration : ajouter is_admin pour identifier les administrateurs
+try {
+  db.exec("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0");
+} catch (e) {
+  // Colonne déjà existe
+}
+
+// Créer le compte admin automatiquement au démarrage si il n'existe pas
+const ADMIN_EMAIL = 'Chenrigtta@gmail.com';
+const ADMIN_PASSWORD = 'Loic3192';
+try {
+  const existingAdmin = db.prepare('SELECT id FROM users WHERE email = ?').get(ADMIN_EMAIL);
+  if (!existingAdmin) {
+    const salt = bcrypt.genSaltSync(10);
+    const passwordHash = bcrypt.hashSync(ADMIN_PASSWORD, salt);
+    db.prepare(`
+      INSERT INTO users (email, password_hash, name, is_admin, last_activity)
+      VALUES (?, ?, 'Admin', 1, CURRENT_TIMESTAMP)
+    `).run(ADMIN_EMAIL, passwordHash);
+    console.log('Compte admin créé automatiquement');
+  } else {
+    // S'assurer que le compte existant est bien marqué admin
+    db.prepare('UPDATE users SET is_admin = 1 WHERE email = ?').run(ADMIN_EMAIL);
+  }
+} catch (e) {
+  console.error('Erreur création compte admin:', e.message);
 }
 
 console.log('Database initialized successfully');
