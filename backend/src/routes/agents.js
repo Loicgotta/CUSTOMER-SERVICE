@@ -70,11 +70,7 @@ router.post('/', async (req, res) => {
   } catch (error) {
     Logger.error('❌ [AGENT] Erreur lors de la création de l\'agent:', error);
     Logger.error('❌ [AGENT] Stack:', error.stack);
-    res.status(500).json({
-      error: 'Erreur serveur',
-      details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -158,10 +154,7 @@ router.put('/:id', async (req, res) => {
     });
   } catch (error) {
     Logger.error('Erreur lors de la mise à jour de l\'agent:', error);
-    res.status(500).json({
-      error: 'Erreur serveur',
-      details: error.message
-    });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
