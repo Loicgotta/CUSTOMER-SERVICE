@@ -14,7 +14,6 @@ router.post('/', async (req, res) => {
   try {
     const { prompt, documentation, documents, email, color } = req.body;
     Logger.info(`🤖 [AGENT] User ID: ${req.user.userId}`);
-    Logger.info(`🤖 [AGENT] Email: ${email}`);
     Logger.info(`🤖 [AGENT] Prompt length: ${prompt?.length || 0} caractères`);
     Logger.info(`🤖 [AGENT] Documents: ${documents ? documents.length : 0}`);
     Logger.info(`🤖 [AGENT] Couleur: ${color || '#667eea'}`);

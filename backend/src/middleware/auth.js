@@ -1,8 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-// Clé secrète JWT (dans un vrai projet, cela devrait être dans .env)
-const JWT_SECRET = process.env.JWT_SECRET || 'votre-cle-secrete-super-secure-changez-moi';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Middleware d'authentification avec vérification d'inactivité
 export const authenticateToken = (req, res, next) => {

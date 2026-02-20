@@ -197,7 +197,7 @@ ${conversationsText}`
         return { success: false, error: 'Agent non trouvé ou non autorisé' };
       }
 
-      Logger.info(`Agent trouvé: ${agent.email}`);
+      Logger.info(`Agent trouvé: ID ${agentId}`);
 
       // Générer le résumé avec les filtres
       const summary = await this.generateSummary(agentId, { startDate, endDate, preferences });
@@ -236,7 +236,7 @@ ${conversationsText}`
         timeout: 30000 // 30 secondes de timeout
       });
 
-      Logger.success(`Rapport envoyé avec succès pour l'agent ${agentId} à ${agent.email}`);
+      Logger.success(`Rapport envoyé avec succès pour l'agent ${agentId}`);
       Logger.debug('Réponse webhook', {
         status: response.status,
         data: response.data

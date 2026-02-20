@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -24,14 +26,56 @@ if (!process.env.OPENAI_API_KEY) {
   console.error('💡 Ajoutez OPENAI_API_KEY dans votre fichier .env ou dans les variables d\'environnement Render');
 }
 
+if (!process.env.JWT_SECRET) {
+  console.error('❌ ERREUR: JWT_SECRET manquant dans les variables d\'environnement');
+  process.exit(1);
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(cors());
+// Headers de sécurité HTTP
+app.use(helmet({
+  contentSecurityPolicy: false // désactivé car le frontend React est servi par le même serveur
+}));
+
+// CORS restrictif : autoriser uniquement les origines connues
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Autoriser les requêtes sans origin (widget intégré, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('CORS non autorisé'));
+  },
+  credentials: true
+}));
+
+// Rate limiting sur les routes d'authentification (anti brute-force)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  message: { error: 'Trop de tentatives. Réessayez dans 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Rate limiting global (protection DDoS légère)
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.use(globalLimiter);
+
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
@@ -43,23 +87,23 @@ const frontendPath = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendPath));
 
 // Routes API
-app.use('/api/auth', authRouter); // Routes d'authentification (publiques)
+app.use('/api/auth', authLimiter, authRouter); // Rate limitée (anti brute-force)
 app.use('/api/agents', authenticateToken, agentsRouter); // Protégé
 app.use('/api/chat', chatRouter); // Public (pour les visiteurs du widget)
 app.use('/api/docs', authenticateToken, docsRouter); // Protégé
-app.use('/api/admin', authenticateToken, adminRouter); // Admin uniquement
+app.use('/api/admin', authenticateToken, requireAdmin, adminRouter); // Admin uniquement
 app.use('/api/prompt', authenticateToken, promptRouter); // Amélioration de prompt
 
 // Route pour envoyer manuellement un rapport (protégée)
 app.post('/api/reports/send/:agentId', authenticateToken, async (req, res) => {
   try {
     const { startDate, endDate, preferences } = req.body || {};
-    Logger.info(`Requête rapport agent ${req.params.agentId} | User: ${req.user.email} | Dates: ${startDate || 'toutes'} → ${endDate || 'toutes'} | Prefs: ${preferences || 'aucune'}`);
+    Logger.info(`Requête rapport agent ${req.params.agentId} | User ID: ${req.user.userId} | Dates: ${startDate || 'toutes'} → ${endDate || 'toutes'}`);
 
     const result = await ReportService.sendReport(req.params.agentId, { startDate, endDate, preferences }, req.user.userId);
 
     if (result.success) {
-      Logger.success(`Rapport envoyé avec succès à ${result.email}`);
+      Logger.success(`Rapport envoyé avec succès pour l'agent ${req.params.agentId}`);
       res.json(result);
     } else {
       Logger.warning(`Échec de l'envoi du rapport: ${result.error}`);
@@ -75,8 +119,8 @@ app.post('/api/reports/send/:agentId', authenticateToken, async (req, res) => {
   }
 });
 
-// Route pour récupérer les logs
-app.get('/api/logs', (req, res) => {
+// Route pour récupérer les logs (admin uniquement)
+app.get('/api/logs', authenticateToken, requireAdmin, (req, res) => {
   try {
     const logs = Logger.getLogs();
     res.json({
@@ -88,11 +132,11 @@ app.get('/api/logs', (req, res) => {
   }
 });
 
-// Route pour effacer les logs
-app.delete('/api/logs', (req, res) => {
+// Route pour effacer les logs (admin uniquement)
+app.delete('/api/logs', authenticateToken, requireAdmin, (req, res) => {
   try {
     Logger.clearLogs();
-    Logger.info('Logs effacés depuis le dashboard');
+    Logger.info('Logs effacés par un administrateur');
     res.json({ message: 'Logs effacés avec succès' });
   } catch (error) {
     res.status(500).json({ error: 'Erreur lors de l\'effacement des logs' });

@@ -1,7 +1,9 @@
 import express from 'express';
 import ChatService from '../services/chatService.js';
 import Conversation from '../models/Conversation.js';
+import db from '../database/db.js';
 import { v4 as uuidv4 } from 'uuid';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -25,8 +27,8 @@ router.post('/message', async (req, res) => {
       response
     });
   } catch (error) {
-    console.error('Erreur lors du traitement du message:', error);
-    res.status(500).json({ error: 'Erreur serveur', details: error.message });
+    // erreur interne, pas de stack exposée au client
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -36,18 +38,28 @@ router.get('/history/:sessionId', (req, res) => {
     const conversations = Conversation.findBySessionId(req.params.sessionId);
     res.json(conversations);
   } catch (error) {
-    console.error('Erreur lors de la récupération de l\'historique:', error);
+    // erreur interne
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
-// Récupérer toutes les conversations d'un agent
-router.get('/agent/:agentId', (req, res) => {
+// Récupérer toutes les conversations d'un agent (protégé : propriétaire uniquement)
+router.get('/agent/:agentId', authenticateToken, (req, res) => {
   try {
-    const conversations = Conversation.findByAgentId(req.params.agentId);
+    const agentId = req.params.agentId;
+
+    // Vérifier que l'agent appartient à l'utilisateur connecté
+    const agent = db.prepare('SELECT user_id FROM agents WHERE id = ?').get(agentId);
+    if (!agent) {
+      return res.status(404).json({ error: 'Agent introuvable' });
+    }
+    if (agent.user_id !== req.user.userId) {
+      return res.status(403).json({ error: 'Accès refusé' });
+    }
+
+    const conversations = Conversation.findByAgentId(agentId);
     res.json(conversations);
   } catch (error) {
-    console.error('Erreur lors de la récupération des conversations:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

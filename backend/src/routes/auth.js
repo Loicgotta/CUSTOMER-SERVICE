@@ -1,8 +1,11 @@
 import express from 'express';
 import User from '../models/User.js';
+import db from '../database/db.js';
 import { generateToken, authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // POST /api/auth/register - Inscription d'un nouvel utilisateur
 router.post('/register', async (req, res) => {
@@ -14,24 +17,32 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Email, mot de passe et nom sont requis' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ error: 'Format d\'email invalide' });
     }
 
-    // Vérifier si l'email existe déjà
-    const existingUser = User.findByEmail(email);
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 8 caractères' });
+    }
+
+    if (name.trim().length < 2) {
+      return res.status(400).json({ error: 'Le nom doit contenir au moins 2 caractères' });
+    }
+
+    // Anti-énumération : même message si l'email existe déjà
+    const existingUser = User.findByEmail(email.toLowerCase());
     if (existingUser) {
-      return res.status(400).json({ error: 'Cet email est déjà utilisé' });
+      return res.status(400).json({ error: 'Impossible de créer ce compte. Vérifiez les informations saisies.' });
     }
 
     // Créer l'utilisateur
-    const userId = User.create({ email, password, name });
+    const userId = User.create({ email: email.toLowerCase(), password, name: name.trim() });
 
     // Mettre à jour last_activity à la création
     User.updateActivity(userId);
 
     // Générer un token
-    const token = generateToken(userId, email);
+    const token = generateToken(userId, email.toLowerCase());
 
     // Récupérer l'utilisateur créé (sans le mot de passe)
     const user = User.findById(userId);
@@ -42,7 +53,6 @@ router.post('/register', async (req, res) => {
       user
     });
   } catch (error) {
-    console.error('Erreur lors de l\'inscription:', error);
     res.status(500).json({ error: 'Erreur serveur lors de l\'inscription' });
   }
 });
@@ -58,7 +68,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Trouver l'utilisateur
-    const user = User.findByEmail(email);
+    const user = User.findByEmail(email.toLowerCase());
     if (!user) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
@@ -84,7 +94,6 @@ router.post('/login', async (req, res) => {
       user: userWithoutPassword
     });
   } catch (error) {
-    console.error('Erreur lors de la connexion:', error);
     res.status(500).json({ error: 'Erreur serveur lors de la connexion' });
   }
 });
@@ -99,16 +108,78 @@ router.get('/me', authenticateToken, (req, res) => {
 
     res.json({ user });
   } catch (error) {
-    console.error('Erreur lors de la récupération du profil:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
 // POST /api/auth/logout - Déconnexion (côté client, suppression du token)
 router.post('/logout', authenticateToken, (req, res) => {
-  // La déconnexion se fait principalement côté client (suppression du token)
-  // Ici on peut juste renvoyer un message de confirmation
   res.json({ message: 'Déconnexion réussie' });
+});
+
+// DELETE /api/auth/account - Droit à l'oubli (RGPD Art. 17)
+router.delete('/account', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Vérifier que l'utilisateur existe
+    const user = User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Empêcher la suppression du compte admin
+    if (user.is_admin) {
+      return res.status(403).json({ error: 'Le compte administrateur ne peut pas être supprimé via cette route.' });
+    }
+
+    // Supprimer toutes les données liées (CASCADE sur agents → conversations + embeddings)
+    User.delete(userId);
+
+    res.json({ message: 'Compte et données associées supprimés définitivement.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur lors de la suppression du compte' });
+  }
+});
+
+// GET /api/auth/export - Export des données personnelles (RGPD Art. 20)
+router.get('/export', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const user = User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Récupérer tous les agents de l'utilisateur
+    const agents = db.prepare('SELECT id, email, prompt, documentation, widget_color, created_at FROM agents WHERE user_id = ?').all(userId);
+
+    // Récupérer les conversations pour chaque agent
+    const agentsWithConversations = agents.map(agent => {
+      const conversations = db.prepare(
+        'SELECT session_id, user_message, bot_response, created_at FROM conversations WHERE agent_id = ? ORDER BY created_at ASC'
+      ).all(agent.id);
+      return { ...agent, conversations };
+    });
+
+    const exportData = {
+      exported_at: new Date().toISOString(),
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        created_at: user.created_at
+      },
+      agents: agentsWithConversations
+    };
+
+    res.setHeader('Content-Disposition', 'attachment; filename="mes-donnees.json"');
+    res.setHeader('Content-Type', 'application/json');
+    res.json(exportData);
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur lors de l\'export des données' });
+  }
 });
 
 export default router;
