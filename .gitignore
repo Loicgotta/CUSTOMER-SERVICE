@@ -13,7 +13,7 @@ backend/data/*.db-journal
 # Build output
 dist/
 build/
-backend/public/
+# Note: backend/public/ contient widget.js (fichier source, pas un artefact) → ne pas ignorer
 
 # Logs
 *.log
