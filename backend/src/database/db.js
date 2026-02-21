@@ -120,22 +120,48 @@ try {
 // Créer le compte admin automatiquement au démarrage si il n'existe pas
 const ADMIN_EMAIL = 'Chenrigtta@gmail.com';
 const ADMIN_PASSWORD = 'Loic3192';
+
+console.log('🔐 Vérification du compte administrateur...');
 try {
-  const existingAdmin = db.prepare('SELECT id FROM users WHERE email = ?').get(ADMIN_EMAIL);
+  const existingAdmin = db.prepare('SELECT id, email, is_admin FROM users WHERE email = ?').get(ADMIN_EMAIL);
+
   if (!existingAdmin) {
+    console.log('📝 Création du compte admin...');
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync(ADMIN_PASSWORD, salt);
-    db.prepare(`
+
+    const result = db.prepare(`
       INSERT INTO users (email, password_hash, name, is_admin, last_activity)
       VALUES (?, ?, 'Admin', 1, CURRENT_TIMESTAMP)
     `).run(ADMIN_EMAIL, passwordHash);
-    console.log('Compte admin créé automatiquement');
+
+    console.log('✅ Compte admin créé avec succès (ID:', result.lastInsertRowid, ')');
+    console.log('   Email:', ADMIN_EMAIL);
+    console.log('   Mot de passe:', ADMIN_PASSWORD);
   } else {
+    console.log('✅ Compte admin trouvé (ID:', existingAdmin.id, ')');
+
     // S'assurer que le compte existant est bien marqué admin
-    db.prepare('UPDATE users SET is_admin = 1 WHERE email = ?').run(ADMIN_EMAIL);
+    if (!existingAdmin.is_admin) {
+      db.prepare('UPDATE users SET is_admin = 1 WHERE email = ?').run(ADMIN_EMAIL);
+      console.log('🔄 Privilèges admin restaurés pour:', ADMIN_EMAIL);
+    } else {
+      console.log('   Email:', ADMIN_EMAIL);
+      console.log('   Statut: Administrateur confirmé');
+    }
   }
+
+  // Vérification finale
+  const finalCheck = db.prepare('SELECT id, email, is_admin FROM users WHERE email = ?').get(ADMIN_EMAIL);
+  if (!finalCheck || !finalCheck.is_admin) {
+    console.error('❌ ERREUR CRITIQUE: Le compte admin n\'existe pas ou n\'a pas les privilèges admin!');
+    process.exit(1);
+  }
+
 } catch (e) {
-  console.error('Erreur création compte admin:', e.message);
+  console.error('❌ ERREUR CRITIQUE lors de la création du compte admin:', e.message);
+  console.error('Stack:', e.stack);
+  process.exit(1); // Arrêter le serveur si le compte admin ne peut pas être créé
 }
 
 console.log('Database initialized successfully');
