@@ -19,3 +19,5 @@ services:
         sync: false  # À configurer manuellement dans le dashboard Render
       - key: WEBHOOK_URL
         value: https://n8n.srv793731.hstgr.cloud/webhook/mail-rapport
+      - key: ALLOWED_ORIGINS
+        value: https://customer-service-blqv.onrender.com

@@ -42,16 +42,30 @@ app.use(helmet({
   contentSecurityPolicy: false // désactivé car le frontend React est servi par le même serveur
 }));
 
-// CORS restrictif : autoriser uniquement les origines connues
+// CORS : autoriser les origines configurées + domaine Render en production
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'];
+
+// Ajouter automatiquement l'URL Render si on est en production
+if (process.env.NODE_ENV === 'production' && process.env.RENDER === 'true') {
+  // Render met à disposition l'URL via le service name
+  // Format: https://<service-name>.onrender.com
+  const renderUrl = 'https://customer-service-blqv.onrender.com';
+  if (!allowedOrigins.includes(renderUrl)) {
+    allowedOrigins.push(renderUrl);
+  }
+}
 
 app.use(cors({
   origin: (origin, callback) => {
     // Autoriser les requêtes sans origin (widget intégré, curl, etc.)
     if (!origin) return callback(null, true);
+
     if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // Log pour debug en production
+    Logger.warning(`CORS bloqué pour origin: ${origin}`);
     callback(new Error('CORS non autorisé'));
   },
   credentials: true
