@@ -26,10 +26,8 @@ if (!process.env.OPENAI_API_KEY) {
   console.error('💡 Ajoutez OPENAI_API_KEY dans votre fichier .env ou dans les variables d\'environnement Render');
 }
 
-if (!process.env.JWT_SECRET) {
-  console.error('❌ ERREUR: JWT_SECRET manquant dans les variables d\'environnement');
-  process.exit(1);
-}
+// Note: JWT_SECRET n'est plus requis ici car il est généré automatiquement
+// et stocké dans la base de données (voir database/db.js)
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

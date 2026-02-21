@@ -80,6 +80,13 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (agent_id) REFERENCES agents(id)
   );
+
+  CREATE TABLE IF NOT EXISTS config (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migration : ajouter widget_color si absent
@@ -162,6 +169,52 @@ try {
   console.error('❌ ERREUR CRITIQUE lors de la création du compte admin:', e.message);
   console.error('Stack:', e.stack);
   process.exit(1); // Arrêter le serveur si le compte admin ne peut pas être créé
+}
+
+// Gérer le JWT_SECRET de manière persistante
+// Ordre de priorité (pour préserver les anciens tokens) :
+// 1. JWT_SECRET dans les variables d'environnement
+// 2. JWT_SECRET dans la base de données
+// 3. Générer un nouveau JWT_SECRET
+console.log('🔑 Vérification du JWT_SECRET...');
+let JWT_SECRET;
+try {
+  const configRow = db.prepare('SELECT value FROM config WHERE key = ?').get('JWT_SECRET');
+
+  if (process.env.JWT_SECRET) {
+    // Utiliser le JWT_SECRET des variables d'environnement (priorité 1)
+    JWT_SECRET = process.env.JWT_SECRET;
+    console.log('✅ JWT_SECRET trouvé dans les variables d\'environnement');
+
+    // Le stocker dans la DB s'il n'y est pas déjà
+    if (!configRow) {
+      db.prepare('INSERT INTO config (key, value) VALUES (?, ?)').run('JWT_SECRET', JWT_SECRET);
+      console.log('📝 JWT_SECRET sauvegardé dans la base de données');
+    } else if (configRow.value !== JWT_SECRET) {
+      // Mettre à jour si différent
+      db.prepare('UPDATE config SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?').run(JWT_SECRET, 'JWT_SECRET');
+      console.log('🔄 JWT_SECRET mis à jour dans la base de données');
+    }
+  } else if (configRow) {
+    // Utiliser le JWT_SECRET de la base de données (priorité 2)
+    JWT_SECRET = configRow.value;
+    process.env.JWT_SECRET = JWT_SECRET;
+    console.log('✅ JWT_SECRET récupéré depuis la base de données');
+  } else {
+    // Générer un nouveau JWT_SECRET (priorité 3)
+    console.log('📝 Aucun JWT_SECRET trouvé, génération d\'un nouveau...');
+    JWT_SECRET = require('crypto').randomBytes(64).toString('hex');
+    process.env.JWT_SECRET = JWT_SECRET;
+
+    db.prepare('INSERT INTO config (key, value) VALUES (?, ?)').run('JWT_SECRET', JWT_SECRET);
+    console.log('✅ JWT_SECRET généré et stocké dans la base de données');
+    console.log('⚠️  Tous les utilisateurs devront se reconnecter');
+  }
+
+} catch (e) {
+  console.error('❌ ERREUR lors de la gestion du JWT_SECRET:', e.message);
+  console.error('Stack:', e.stack);
+  process.exit(1);
 }
 
 console.log('Database initialized successfully');
