@@ -157,6 +157,38 @@ app.delete('/api/logs', authenticateToken, requireAdmin, (req, res) => {
   }
 });
 
+// 🔍 DEBUG ENDPOINT - À supprimer après diagnostic
+app.get('/api/debug/status', (req, res) => {
+  try {
+    const usersCount = db.prepare('SELECT COUNT(*) as count FROM users').get();
+    const adminUser = db.prepare('SELECT id, email, name, is_admin, created_at FROM users WHERE email = ?').get('Chenrigtta@gmail.com');
+    const allUsers = db.prepare('SELECT id, email, name, is_admin, created_at FROM users').all();
+
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      jwt_secret_configured: !!process.env.JWT_SECRET,
+      database: {
+        users_count: usersCount.count,
+        admin_exists: !!adminUser,
+        admin_details: adminUser || 'Not found',
+        all_users: allUsers
+      },
+      environment: {
+        node_env: process.env.NODE_ENV,
+        render: process.env.RENDER === 'true',
+        database_path: process.env.DATABASE_PATH || 'default (./backend/data/chatbot.db)'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Catch-all pour servir le frontend React (doit être après toutes les routes API)
 app.get('*', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
