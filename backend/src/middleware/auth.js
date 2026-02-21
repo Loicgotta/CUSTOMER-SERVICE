@@ -57,6 +57,28 @@ export const authenticateToken = (req, res, next) => {
   }
 };
 
+// Middleware pour vérifier les privilèges admin
+export const requireAdmin = (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const user = User.findById(userId);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Utilisateur non trouvé.' });
+    }
+
+    if (!user.is_admin) {
+      return res.status(403).json({ error: 'Accès refusé. Privilèges administrateur requis.' });
+    }
+
+    // Ajouter le flag admin à req.user
+    req.user.isAdmin = true;
+    next();
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de la vérification des privilèges admin.' });
+  }
+};
+
 // Fonction pour générer un token
 export const generateToken = (userId, email) => {
   return jwt.sign(

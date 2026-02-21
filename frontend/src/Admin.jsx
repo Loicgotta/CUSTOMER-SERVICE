@@ -6,6 +6,7 @@ function Admin({ onBack }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expandedUser, setExpandedUser] = useState(null);
+  const [deletingUserId, setDeletingUserId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,6 +37,35 @@ function Admin({ onBack }) {
   const truncatePrompt = (prompt, maxLength = 100) => {
     if (!prompt) return '—';
     return prompt.length > maxLength ? prompt.substring(0, maxLength) + '...' : prompt;
+  };
+
+  const handleDeleteUser = async (userId, userName, userEmail) => {
+    if (!window.confirm(`⚠️ Êtes-vous sûr de vouloir supprimer l'utilisateur "${userName}" (${userEmail}) ?\n\nCette action est irréversible et supprimera :\n- Le compte utilisateur\n- Tous ses agents\n- Toutes ses conversations\n- Toutes ses données`)) {
+      return;
+    }
+
+    setDeletingUserId(userId);
+    try {
+      await axios.delete(`/api/admin/users/${userId}`);
+
+      // Mettre à jour la liste des utilisateurs
+      setUsers(users.filter(u => u.id !== userId));
+
+      // Mettre à jour les stats
+      if (stats) {
+        setStats({
+          ...stats,
+          users: stats.users - 1
+        });
+      }
+
+      alert(`✅ Utilisateur "${userName}" supprimé avec succès`);
+    } catch (error) {
+      console.error('Erreur lors de la suppression de l\'utilisateur:', error);
+      alert(error.response?.data?.error || 'Erreur lors de la suppression de l\'utilisateur');
+    } finally {
+      setDeletingUserId(null);
+    }
   };
 
   if (loading) {
@@ -109,13 +139,14 @@ function Admin({ onBack }) {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  cursor: 'pointer',
                   transition: 'background 0.2s',
                   background: expandedUser === user.id ? '#f7f7ff' : 'white'
                 }}
-                onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', flex: 1 }}
+                  onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
+                >
                   <div style={{
                     width: '42px', height: '42px', borderRadius: '50%',
                     background: 'linear-gradient(135deg, #667eea, #764ba2)',
@@ -131,15 +162,59 @@ function Admin({ onBack }) {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                  <div style={{ textAlign: 'center' }}>
+                  <div
+                    style={{ textAlign: 'center', cursor: 'pointer' }}
+                    onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
+                  >
                     <div style={{ fontWeight: '700', color: '#667eea', fontSize: '1.2rem' }}>{user.agent_count}</div>
                     <div style={{ fontSize: '0.75rem', color: '#666' }}>agent{user.agent_count > 1 ? 's' : ''}</div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
+                  <div
+                    style={{ textAlign: 'right', cursor: 'pointer' }}
+                    onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
+                  >
                     <div style={{ fontSize: '0.8rem', color: '#888' }}>Inscrit le</div>
                     <div style={{ fontSize: '0.85rem', color: '#555' }}>{formatDate(user.created_at)}</div>
                   </div>
-                  <div style={{ fontSize: '1.2rem', color: '#667eea' }}>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteUser(user.id, user.name, user.email);
+                    }}
+                    disabled={deletingUserId === user.id}
+                    style={{
+                      background: deletingUserId === user.id ? '#cbd5e0' : '#f56565',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '0.5rem 1rem',
+                      fontSize: '0.85rem',
+                      fontWeight: '600',
+                      cursor: deletingUserId === user.id ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s',
+                      opacity: deletingUserId === user.id ? 0.6 : 1
+                    }}
+                    onMouseEnter={(e) => {
+                      if (deletingUserId !== user.id) {
+                        e.target.style.background = '#e53e3e';
+                        e.target.style.transform = 'scale(1.05)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (deletingUserId !== user.id) {
+                        e.target.style.background = '#f56565';
+                        e.target.style.transform = 'scale(1)';
+                      }
+                    }}
+                  >
+                    {deletingUserId === user.id ? '⏳ Suppression...' : '🗑️ Supprimer'}
+                  </button>
+
+                  <div
+                    style={{ fontSize: '1.2rem', color: '#667eea', cursor: 'pointer' }}
+                    onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
+                  >
                     {expandedUser === user.id ? '▲' : '▼'}
                   </div>
                 </div>

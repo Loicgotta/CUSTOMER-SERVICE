@@ -10,11 +10,11 @@ import agentsRouter from './routes/agents.js';
 import chatRouter from './routes/chat.js';
 import docsRouter from './routes/docs.js';
 import authRouter from './routes/auth.js';
-import adminRouter, { requireAdmin } from './routes/admin.js';
+import adminRouter from './routes/admin.js';
 import promptRouter from './routes/prompt.js';
 import ReportService from './services/reportService.js';
 import Logger from './utils/logger.js';
-import { authenticateToken } from './middleware/auth.js';
+import { authenticateToken, requireAdmin } from './middleware/auth.js';
 import db from './database/db.js'; // Initialiser la DB et importer l'instance
 
 dotenv.config();
