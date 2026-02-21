@@ -125,8 +125,8 @@ try {
 }
 
 // Créer le compte admin automatiquement au démarrage si il n'existe pas
-const ADMIN_EMAIL = 'Chenrigtta@gmail.com';
-const ADMIN_PASSWORD = 'Loic3192';
+const ADMIN_EMAIL = 'b.easeteam@gmail.com';
+const ADMIN_PASSWORD = 'Loic3192@';
 
 console.log('🔐 Vérification du compte administrateur...');
 try {
