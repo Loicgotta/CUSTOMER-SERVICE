@@ -15,7 +15,7 @@ import promptRouter from './routes/prompt.js';
 import ReportService from './services/reportService.js';
 import Logger from './utils/logger.js';
 import { authenticateToken } from './middleware/auth.js';
-import './database/db.js'; // Initialiser la DB
+import db from './database/db.js'; // Initialiser la DB et importer l'instance
 
 dotenv.config();
 
