@@ -152,10 +152,16 @@ try {
     if (!existingAdmin.is_admin) {
       db.prepare('UPDATE users SET is_admin = 1 WHERE email = ?').run(ADMIN_EMAIL);
       console.log('🔄 Privilèges admin restaurés pour:', ADMIN_EMAIL);
-    } else {
-      console.log('   Email:', ADMIN_EMAIL);
-      console.log('   Statut: Administrateur confirmé');
     }
+
+    // TOUJOURS réinitialiser le mot de passe admin au démarrage
+    console.log('🔄 Réinitialisation du mot de passe admin...');
+    const salt = bcrypt.genSaltSync(10);
+    const passwordHash = bcrypt.hashSync(ADMIN_PASSWORD, salt);
+    db.prepare('UPDATE users SET password_hash = ? WHERE email = ?').run(passwordHash, ADMIN_EMAIL);
+    console.log('✅ Mot de passe admin réinitialisé à:', ADMIN_PASSWORD);
+    console.log('   Email:', ADMIN_EMAIL);
+    console.log('   Statut: Administrateur confirmé');
   }
 
   // Vérification finale
