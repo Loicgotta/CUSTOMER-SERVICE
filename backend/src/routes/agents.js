@@ -12,8 +12,9 @@ router.post('/', async (req, res) => {
   Logger.info('🤖 [AGENT] Début création d\'agent');
 
   try {
-    const { prompt, documentation, documents, email, color } = req.body;
+    const { name, prompt, documentation, documents, email, color } = req.body;
     Logger.info(`🤖 [AGENT] User ID: ${req.user.userId}`);
+    Logger.info(`🤖 [AGENT] Nom: ${name || 'Non défini'}`);
     Logger.info(`🤖 [AGENT] Prompt length: ${prompt?.length || 0} caractères`);
     Logger.info(`🤖 [AGENT] Documents: ${documents ? documents.length : 0}`);
     Logger.info(`🤖 [AGENT] Couleur: ${color || '#667eea'}`);
@@ -27,6 +28,7 @@ router.post('/', async (req, res) => {
     Logger.info('🤖 [AGENT] Création de l\'agent dans la DB...');
     const agentId = Agent.create({
       userId: req.user.userId,
+      name,
       prompt,
       documentation: '',
       email,
@@ -117,7 +119,7 @@ router.get('/:id/documents', (req, res) => {
 // Mettre à jour un agent (seulement si appartient à l'utilisateur)
 router.put('/:id', async (req, res) => {
   try {
-    const { prompt, documentation, documents, email, color } = req.body;
+    const { name, prompt, documentation, documents, email, color } = req.body;
     const agentId = req.params.id;
 
     const agent = Agent.findById(agentId, req.user.userId);
@@ -126,6 +128,7 @@ router.put('/:id', async (req, res) => {
     }
 
     Agent.update(agentId, {
+      name: name !== undefined ? name : agent.name,
       prompt: prompt || agent.prompt,
       documentation: '', // On ne stocke plus la doc en DB
       email: email || agent.email,

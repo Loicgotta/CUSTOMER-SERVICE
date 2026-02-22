@@ -27,6 +27,7 @@ function App() {
   const [showForm, setShowForm] = useState(false);
   const [editingAgent, setEditingAgent] = useState(null);
   const [formData, setFormData] = useState({
+    name: '',
     prompt: '',
     email: '',
     color: '#667eea'
@@ -157,7 +158,7 @@ function App() {
         response = await axios.post('/api/agents', payload);
       }
 
-      setFormData({ prompt: '', email: '', color: '#667eea' });
+      setFormData({ name: '', prompt: '', email: '', color: '#667eea' });
       setDocuments([]);
       setManualDocText('');
       setManualDocName('');
@@ -187,6 +188,7 @@ function App() {
       const existingDocs = docsResponse.data.documents.map(name => ({ name, content: '', existing: true }));
 
       setFormData({
+        name: agent.name || '',
         prompt: agent.prompt,
         email: agent.email,
         color: agent.widget_color || '#667eea'
@@ -376,7 +378,7 @@ function App() {
           <div className="chat-page-header">
             <button className="chat-back-btn" onClick={closeTestChat}>← Retour</button>
             <div className="chat-page-title">
-              <h2>Test Agent #{testingAgent.id}</h2>
+              <h2>Test {testingAgent.name || `Agent #${testingAgent.id}`}</h2>
               <span className="chat-page-email">{testingAgent.email}</span>
             </div>
           </div>
@@ -499,6 +501,18 @@ function App() {
           <div className="form-card">
             <h2>{editingAgent ? `Modifier l'agent #${editingAgent}` : 'Nouvel Agent'}</h2>
             <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Nom de l'agent (optionnel)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Support Client, Assistant FAQ, Agent Commercial..."
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                />
+              </div>
+
               <div className="form-group">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                   <label style={{ margin: 0 }}>Prompt du Chatbot *</label>
@@ -631,7 +645,7 @@ function App() {
           {agents.map((agent) => (
             <div key={agent.id} className="agent-card">
               <div className="agent-header">
-                <h3><span className="agent-color-dot" style={{ backgroundColor: agent.widget_color || '#667eea' }}></span>Agent #{agent.id}</h3>
+                <h3><span className="agent-color-dot" style={{ backgroundColor: agent.widget_color || '#667eea' }}></span>{agent.name || `Agent #${agent.id}`}</h3>
                 <div className="agent-header-actions">
                   <button
                     className="btn btn-secondary btn-sm"
@@ -699,7 +713,7 @@ function App() {
           <div className="modal-overlay" onClick={() => setReportModalAgent(null)}>
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>📧 Rapport — Agent #{reportModalAgent}</h2>
+                <h2>📧 Rapport — {agents.find(a => a.id === reportModalAgent)?.name || `Agent #${reportModalAgent}`}</h2>
                 <button className="modal-close" onClick={() => setReportModalAgent(null)}>×</button>
               </div>
               <div className="modal-body">

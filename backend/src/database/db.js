@@ -124,6 +124,13 @@ try {
   // Colonne déjà existe
 }
 
+// Migration : ajouter name aux agents pour personnalisation
+try {
+  db.exec("ALTER TABLE agents ADD COLUMN name TEXT DEFAULT NULL");
+} catch (e) {
+  // Colonne déjà existe
+}
+
 // Créer le compte admin automatiquement au démarrage si il n'existe pas
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;

@@ -1,12 +1,12 @@
 import db from '../database/db.js';
 
 class Agent {
-  static create({ userId, prompt, documentation, email, color }) {
+  static create({ userId, name, prompt, documentation, email, color }) {
     const stmt = db.prepare(`
-      INSERT INTO agents (user_id, prompt, documentation, email, widget_color)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO agents (user_id, name, prompt, documentation, email, widget_color)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
-    const result = stmt.run(userId, prompt, documentation, email, color || '#667eea');
+    const result = stmt.run(userId, name || null, prompt, documentation, email, color || '#667eea');
     return result.lastInsertRowid;
   }
 
@@ -28,21 +28,21 @@ class Agent {
     return stmt.all();
   }
 
-  static update(id, { prompt, documentation, email, color }, userId = null) {
+  static update(id, { name, prompt, documentation, email, color }, userId = null) {
     if (userId) {
       const stmt = db.prepare(`
         UPDATE agents
-        SET prompt = ?, documentation = ?, email = ?, widget_color = ?
+        SET name = ?, prompt = ?, documentation = ?, email = ?, widget_color = ?
         WHERE id = ? AND user_id = ?
       `);
-      return stmt.run(prompt, documentation, email, color || '#667eea', id, userId);
+      return stmt.run(name || null, prompt, documentation, email, color || '#667eea', id, userId);
     }
     const stmt = db.prepare(`
       UPDATE agents
-      SET prompt = ?, documentation = ?, email = ?, widget_color = ?
+      SET name = ?, prompt = ?, documentation = ?, email = ?, widget_color = ?
       WHERE id = ?
     `);
-    return stmt.run(prompt, documentation, email, color || '#667eea', id);
+    return stmt.run(name || null, prompt, documentation, email, color || '#667eea', id);
   }
 
   static delete(id, userId = null) {

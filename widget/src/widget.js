@@ -180,9 +180,28 @@
         outline: none;
         resize: none;
         min-height: 42px;
-        max-height: 120px;
+        max-height: 200px;
         overflow-y: auto;
-        line-height: 1.4;
+        line-height: 1.5;
+        transition: height 0.1s ease;
+      }
+
+      #chatbot-input::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      #chatbot-input::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+
+      #chatbot-input::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 10px;
+      }
+
+      #chatbot-input::-webkit-scrollbar-thumb:hover {
+        background: #a0aec0;
       }
 
       #chatbot-input:focus {
@@ -416,10 +435,19 @@
     }
   }
 
-  // Auto-resize textarea
+  // Auto-resize textarea avec adaptation fluide
   function autoResizeTextarea(textarea) {
+    // Réinitialiser la hauteur pour recalculer
     textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+
+    // Calculer la nouvelle hauteur (max 200px)
+    const newHeight = Math.min(textarea.scrollHeight, 200);
+    textarea.style.height = newHeight + 'px';
+
+    // Scroller automatiquement vers le bas du textarea si débordement
+    if (textarea.scrollHeight > 200) {
+      textarea.scrollTop = textarea.scrollHeight;
+    }
   }
 
   // Initialiser le widget
