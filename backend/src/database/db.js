@@ -128,17 +128,21 @@ try {
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
-if (!ADMIN_PASSWORD) {
-  console.error('❌ ERREUR : La variable d\'environnement ADMIN_PASSWORD n\'est pas définie !');
-  console.error('   Veuillez créer un fichier .env avec ADMIN_EMAIL et ADMIN_PASSWORD');
-  process.exit(1);
-}
-
 console.log('🔐 Vérification du compte administrateur...');
 try {
   const existingAdmin = db.prepare('SELECT id, email, is_admin FROM users WHERE email = ?').get(ADMIN_EMAIL);
 
-  if (!existingAdmin) {
+  if (!ADMIN_PASSWORD) {
+    // Pas de mot de passe défini : avertissement mais ne pas bloquer si un admin existe déjà
+    if (existingAdmin) {
+      console.warn('⚠️  ADMIN_PASSWORD non défini : le mot de passe admin ne sera pas mis à jour.');
+      console.warn('   Ajoutez ADMIN_EMAIL et ADMIN_PASSWORD dans les variables d\'environnement Render.');
+    } else {
+      console.error('❌ ERREUR : ADMIN_PASSWORD non défini et aucun compte admin existant.');
+      console.error('   Ajoutez ADMIN_EMAIL et ADMIN_PASSWORD dans les variables d\'environnement Render.');
+      process.exit(1);
+    }
+  } else if (!existingAdmin) {
     console.log('📝 Création du compte admin...');
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync(ADMIN_PASSWORD, salt);
@@ -159,7 +163,7 @@ try {
       console.log('🔄 Privilèges admin restaurés pour:', ADMIN_EMAIL);
     }
 
-    // TOUJOURS réinitialiser le mot de passe admin au démarrage
+    // Réinitialiser le mot de passe admin au démarrage
     console.log('🔄 Réinitialisation du mot de passe admin...');
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync(ADMIN_PASSWORD, salt);
