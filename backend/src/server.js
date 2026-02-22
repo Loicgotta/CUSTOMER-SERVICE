@@ -60,22 +60,9 @@ if (process.env.NODE_ENV === 'production' && process.env.RENDER === 'true') {
   }
 }
 
+// CORS : autoriser toutes les origines pour le widget public
 app.use(cors({
-  origin: (origin, callback) => {
-    // Autoriser les requêtes sans origin (widget intégré, curl, etc.)
-    if (!origin) return callback(null, true);
-
-    // Autoriser les origines configurées
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-
-    // Autoriser tous les domaines Lovable (*.lovableproject.com)
-    if (origin.endsWith('.lovableproject.com')) return callback(null, true);
-
-    // Log pour debug en production
-    Logger.warning(`CORS bloqué pour origin: ${origin}`);
-    callback(new Error('CORS non autorisé'));
-  },
-  credentials: true
+  origin: '*' // Autoriser toutes les origines
 }));
 
 // Rate limiting sur les routes d'authentification (anti brute-force)
