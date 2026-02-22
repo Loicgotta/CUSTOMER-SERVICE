@@ -17,6 +17,15 @@ const chatLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// Rate limiting strict pour l'historique (anti énumération de sessionIds)
+const historyLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // Maximum 10 requêtes par minute
+  message: { error: 'Trop de requêtes. Veuillez patienter.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 const MAX_MESSAGE_LENGTH = 2000;
 
 // Envoyer un message au chatbot
@@ -52,11 +61,21 @@ router.post('/message', chatLimiter, async (req, res) => {
   }
 });
 
-// Récupérer l'historique d'une session
-router.get('/history/:sessionId', (req, res) => {
+// Récupérer l'historique d'une session (rate limited pour sécurité)
+router.get('/history/:sessionId', historyLimiter, (req, res) => {
   try {
-    const conversations = Conversation.findBySessionId(req.params.sessionId);
-    res.json(conversations);
+    const { sessionId } = req.params;
+
+    // Validation basique du format UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(sessionId)) {
+      return res.status(400).json({ error: 'Format de session invalide' });
+    }
+
+    const conversations = Conversation.findBySessionId(sessionId);
+
+    // Ne pas révéler si la session existe ou non (anti-énumération)
+    res.json(conversations || []);
   } catch (error) {
     // erreur interne
     res.status(500).json({ error: 'Erreur serveur' });

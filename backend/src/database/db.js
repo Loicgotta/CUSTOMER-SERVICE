@@ -125,8 +125,14 @@ try {
 }
 
 // Créer le compte admin automatiquement au démarrage si il n'existe pas
-const ADMIN_EMAIL = 'b.easeteam@gmail.com';
-const ADMIN_PASSWORD = 'Loic3192@';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+if (!ADMIN_PASSWORD) {
+  console.error('❌ ERREUR : La variable d\'environnement ADMIN_PASSWORD n\'est pas définie !');
+  console.error('   Veuillez créer un fichier .env avec ADMIN_EMAIL et ADMIN_PASSWORD');
+  process.exit(1);
+}
 
 console.log('🔐 Vérification du compte administrateur...');
 try {
@@ -144,7 +150,6 @@ try {
 
     console.log('✅ Compte admin créé avec succès (ID:', result.lastInsertRowid, ')');
     console.log('   Email:', ADMIN_EMAIL);
-    console.log('   Mot de passe:', ADMIN_PASSWORD);
   } else {
     console.log('✅ Compte admin trouvé (ID:', existingAdmin.id, ')');
 
@@ -159,9 +164,8 @@ try {
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync(ADMIN_PASSWORD, salt);
     db.prepare('UPDATE users SET password_hash = ? WHERE email = ?').run(passwordHash, ADMIN_EMAIL);
-    console.log('✅ Mot de passe admin réinitialisé à:', ADMIN_PASSWORD);
+    console.log('✅ Mot de passe admin réinitialisé');
     console.log('   Email:', ADMIN_EMAIL);
-    console.log('   Statut: Administrateur confirmé');
   }
 
   // Vérification finale

@@ -45,24 +45,32 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' } // widget chargeable depuis n'importe quel domaine
 }));
 
-// CORS : autoriser les origines configurées + domaine Render en production
+// CORS : Configuration granulaire pour sécurité + widget public
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'];
 
 // Ajouter automatiquement l'URL Render si on est en production
 if (process.env.NODE_ENV === 'production' && process.env.RENDER === 'true') {
-  // Render met à disposition l'URL via le service name
-  // Format: https://<service-name>.onrender.com
   const renderUrl = 'https://customer-service-blqv.onrender.com';
   if (!allowedOrigins.includes(renderUrl)) {
     allowedOrigins.push(renderUrl);
   }
 }
 
-// CORS : autoriser toutes les origines pour le widget public
-app.use(cors({
-  origin: '*' // Autoriser toutes les origines
+// CORS intelligent : restrictif pour endpoints sensibles, ouvert pour widget
+app.use(cors((req, callback) => {
+  const origin = req.headers.origin;
+
+  // Routes publiques du widget : autoriser toutes les origines
+  if (req.path.startsWith('/api/chat') || req.path === '/widget.js') {
+    callback(null, { origin: true }); // Autoriser toutes origines
+  }
+  // Routes protégées : autoriser uniquement les origines whitelistées
+  else {
+    const isAllowed = !origin || allowedOrigins.includes(origin);
+    callback(null, { origin: isAllowed });
+  }
 }));
 
 // Rate limiting sur les routes d'authentification (anti brute-force)
@@ -149,48 +157,8 @@ app.get('/api/logs', authenticateToken, requireAdmin, (req, res) => {
   }
 });
 
-// Route pour effacer les logs (admin uniquement)
-app.delete('/api/logs', authenticateToken, requireAdmin, (req, res) => {
-  try {
-    Logger.clearLogs();
-    Logger.info('Logs effacés par un administrateur');
-    res.json({ message: 'Logs effacés avec succès' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur lors de l\'effacement des logs' });
-  }
-});
-
-// 🔍 DEBUG ENDPOINT - À supprimer après diagnostic
-app.get('/api/debug/status', (req, res) => {
-  try {
-    const usersCount = db.prepare('SELECT COUNT(*) as count FROM users').get();
-    const adminUser = db.prepare('SELECT id, email, name, is_admin, created_at FROM users WHERE email = ?').get('Chenrigtta@gmail.com');
-    const allUsers = db.prepare('SELECT id, email, name, is_admin, created_at FROM users').all();
-
-    res.json({
-      status: 'OK',
-      timestamp: new Date().toISOString(),
-      jwt_secret_configured: !!process.env.JWT_SECRET,
-      database: {
-        users_count: usersCount.count,
-        admin_exists: !!adminUser,
-        admin_details: adminUser || 'Not found',
-        all_users: allUsers
-      },
-      environment: {
-        node_env: process.env.NODE_ENV,
-        render: process.env.RENDER === 'true',
-        database_path: process.env.DATABASE_PATH || 'default (./backend/data/chatbot.db)'
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'ERROR',
-      error: error.message,
-      stack: error.stack
-    });
-  }
-});
+// Route pour effacer les logs supprimée pour des raisons de sécurité
+// Les logs d'audit ne doivent jamais être supprimables via l'API
 
 // Catch-all pour servir le frontend React (doit être après toutes les routes API)
 app.get('*', (req, res) => {

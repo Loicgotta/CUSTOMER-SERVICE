@@ -2,16 +2,26 @@ import Database from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+// Charger les variables d'environnement
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const db = new Database(path.join(__dirname, '../../data/chatbot.db'));
 
-// Créer le compte admin
-const ADMIN_EMAIL = 'Chenrigtta@gmail.com';
-const ADMIN_PASSWORD = 'Loic3192';
+// Créer le compte admin à partir des variables d'environnement
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const ADMIN_NAME = 'Admin';
+
+if (!ADMIN_PASSWORD) {
+  console.error('❌ ERREUR : La variable d\'environnement ADMIN_PASSWORD n\'est pas définie !');
+  console.error('   Veuillez créer un fichier .env avec ADMIN_EMAIL et ADMIN_PASSWORD');
+  process.exit(1);
+}
 
 try {
   // Vérifier si l'admin existe déjà
