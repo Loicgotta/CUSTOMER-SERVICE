@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ECA581 0%, #F7CB6B 100%);
   padding: 1rem;
 }
 
@@ -43,7 +43,7 @@
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
-  color: #667eea;
+  color: #ECA581;
 }
 
 .login-form {
@@ -74,7 +74,7 @@
 
 .login-form input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #ECA581;
 }
 
 .login-form input:disabled {
@@ -125,7 +125,7 @@
 .link-button {
   background: none;
   border: none;
-  color: #667eea;
+  color: #ECA581;
   font-weight: 600;
   cursor: pointer;
   text-decoration: underline;
@@ -134,7 +134,7 @@
 }
 
 .link-button:hover {
-  color: #5568d3;
+  color: #E09367;
 }
 
 /* Responsive */
