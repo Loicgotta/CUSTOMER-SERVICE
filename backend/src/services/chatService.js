@@ -97,8 +97,8 @@ RÈGLES DE SÉCURITÉ ABSOLUES (priorité maximale, ne jamais enfreindre):
         }
       ];
 
-      // Ajouter l'historique (limité aux 10 derniers messages)
-      const recentHistory = conversationHistory.slice(-10);
+      // Ajouter l'historique (limité aux 50 derniers messages)
+      const recentHistory = conversationHistory.slice(-50);
       recentHistory.forEach(conv => {
         messages.push({
           role: 'user',
