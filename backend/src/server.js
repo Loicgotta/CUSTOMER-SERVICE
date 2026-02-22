@@ -41,7 +41,8 @@ app.set('trust proxy', true);
 
 // Headers de sécurité HTTP
 app.use(helmet({
-  contentSecurityPolicy: false // désactivé car le frontend React est servi par le même serveur
+  contentSecurityPolicy: false, // désactivé car le frontend React est servi par le même serveur
+  crossOriginResourcePolicy: { policy: 'cross-origin' } // widget chargeable depuis n'importe quel domaine
 }));
 
 // CORS : autoriser les origines configurées + domaine Render en production
@@ -95,7 +96,14 @@ app.use(globalLimiter);
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-// Servir les fichiers statiques (widget)
+// Servir les fichiers widget avec headers cross-origin explicites
+app.use('/widget.js', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static('public'));
+
+// Servir les autres fichiers statiques
 app.use(express.static('public'));
 
 // Servir le frontend React (fichiers buildés)
@@ -105,7 +113,7 @@ app.use(express.static(frontendPath));
 // Routes API
 app.use('/api/auth', authLimiter, authRouter); // Rate limitée (anti brute-force)
 app.use('/api/agents', authenticateToken, agentsRouter); // Protégé
-app.use('/api/chat', chatRouter); // Public (pour les visiteurs du widget)
+app.use('/api/chat', cors({ origin: '*' }), chatRouter); // Public (widget sur sites tiers)
 app.use('/api/docs', authenticateToken, docsRouter); // Protégé
 app.use('/api/admin', authenticateToken, requireAdmin, adminRouter); // Admin uniquement
 app.use('/api/prompt', authenticateToken, promptRouter); // Amélioration de prompt
