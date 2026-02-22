@@ -65,7 +65,11 @@ app.use(cors({
     // Autoriser les requêtes sans origin (widget intégré, curl, etc.)
     if (!origin) return callback(null, true);
 
+    // Autoriser les origines configurées
     if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // Autoriser tous les domaines Lovable (*.lovableproject.com)
+    if (origin.endsWith('.lovableproject.com')) return callback(null, true);
 
     // Log pour debug en production
     Logger.warning(`CORS bloqué pour origin: ${origin}`);
