@@ -96,14 +96,16 @@ app.use(globalLimiter);
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-// Servir les fichiers widget avec headers cross-origin explicites
-app.use('/widget.js', (req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+// Ajouter les headers CORS sur widget.js
+app.use((req, res, next) => {
+  if (req.path === '/widget.js') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
   next();
-}, express.static('public'));
+});
 
-// Servir les autres fichiers statiques
+// Servir les fichiers statiques (incluant widget.js)
 app.use(express.static('public'));
 
 // Servir le frontend React (fichiers buildés)
