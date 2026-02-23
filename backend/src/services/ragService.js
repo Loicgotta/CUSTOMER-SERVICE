@@ -10,14 +10,19 @@ const openai = new OpenAI({
 });
 
 class RAGService {
-  // Découper la documentation en chunks
-  static chunkText(text, chunkSize = 500) {
+  // Découper la documentation en chunks avec overlap
+  static chunkText(text, chunkSize = 300, overlap = 75) {
     const words = text.split(/\s+/);
     const chunks = [];
 
-    for (let i = 0; i < words.length; i += chunkSize) {
+    // Calculer le pas (step) en tenant compte de l'overlap
+    const step = chunkSize - overlap;
+
+    for (let i = 0; i < words.length; i += step) {
       const chunk = words.slice(i, i + chunkSize).join(' ');
-      chunks.push(chunk);
+      if (chunk.trim().length > 0) {
+        chunks.push(chunk);
+      }
     }
 
     return chunks;
