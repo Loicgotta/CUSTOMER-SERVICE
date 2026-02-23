@@ -61,6 +61,16 @@ function App() {
   const [chatLoading, setChatLoading] = useState(false);
   const [chatSessionId] = useState(() => crypto.randomUUID());
   const messagesEndRef = useRef(null);
+  const chatInputRef = useRef(null);
+
+  // Auto-resize du textarea du chat
+  const autoResizeChatInput = () => {
+    const textarea = chatInputRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+    }
+  };
 
   // Auto-dismiss notification après 5 secondes
   useEffect(() => {
@@ -312,6 +322,11 @@ function App() {
     if (!message || chatLoading) return;
 
     setChatInput('');
+    // Réinitialiser la hauteur du textarea
+    if (chatInputRef.current) {
+      chatInputRef.current.style.height = 'auto';
+    }
+
     setChatMessages(prev => [...prev, { role: 'user', content: message }]);
     setChatLoading(true);
 
@@ -402,15 +417,24 @@ function App() {
           </div>
 
           <div className="chat-input-area">
-            <input
-              type="text"
+            <textarea
+              ref={chatInputRef}
               className="chat-input"
-              placeholder="Tapez votre message..."
+              placeholder="Tapez votre message... (Shift+Enter pour sauter une ligne)"
               value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && sendTestMessage()}
+              onChange={(e) => {
+                setChatInput(e.target.value);
+                autoResizeChatInput();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendTestMessage();
+                }
+              }}
               disabled={chatLoading}
               autoFocus
+              rows={1}
             />
             <button
               className="chat-send-btn"
