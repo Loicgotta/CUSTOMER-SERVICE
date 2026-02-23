@@ -45,10 +45,10 @@ class ReportService {
       const firstDate = new Date(conversations[0].created_at).toLocaleDateString('fr-FR');
       const lastDate = new Date(conversations[conversations.length - 1].created_at).toLocaleDateString('fr-FR');
 
-      Logger.info('Analyse avec GPT-4.1-mini...');
+      Logger.info('Analyse avec GPT-4.1...');
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-4.1-mini',
+        model: 'gpt-4.1',
         messages: [
           {
             role: 'system',

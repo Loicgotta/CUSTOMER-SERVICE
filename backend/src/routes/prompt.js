@@ -16,7 +16,7 @@ router.post('/enhance', async (req, res) => {
     }
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4.1-mini',
+      model: 'gpt-4.1',
       messages: [
         {
           role: 'system',
