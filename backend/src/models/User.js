@@ -56,6 +56,24 @@ class User {
   }
 
   static delete(id) {
+    // Suppression en cascade manuelle (car conversations/embeddings n'ont pas ON DELETE CASCADE)
+
+    // 1. Récupérer tous les agents de l'utilisateur
+    const agents = db.prepare('SELECT id FROM agents WHERE user_id = ?').all(id);
+
+    // 2. Pour chaque agent, supprimer ses conversations et embeddings
+    const deleteConversations = db.prepare('DELETE FROM conversations WHERE agent_id = ?');
+    const deleteEmbeddings = db.prepare('DELETE FROM embeddings WHERE agent_id = ?');
+
+    agents.forEach(agent => {
+      deleteConversations.run(agent.id);
+      deleteEmbeddings.run(agent.id);
+    });
+
+    // 3. Supprimer les agents (maintenant qu'ils n'ont plus de dépendances)
+    db.prepare('DELETE FROM agents WHERE user_id = ?').run(id);
+
+    // 4. Supprimer l'utilisateur
     const stmt = db.prepare('DELETE FROM users WHERE id = ?');
     return stmt.run(id);
   }
