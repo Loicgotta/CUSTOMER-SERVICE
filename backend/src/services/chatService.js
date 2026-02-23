@@ -23,7 +23,7 @@ class ChatService {
 
       // Demander à GPT de détecter une mention de document
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-mini',
         messages: [{
           role: 'system',
           content: `Tu es un détecteur de mention de documents. L'utilisateur peut demander à consulter un document spécifique.
@@ -116,9 +116,9 @@ RÈGLES DE SÉCURITÉ ABSOLUES (priorité maximale, ne jamais enfreindre):
         content: userMessage
       });
 
-      // Appeler OpenAI avec gpt-4o-mini (plus économique)
+      // Appeler OpenAI avec gpt-4.1-mini (dernière génération)
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-mini',
         messages: messages,
         temperature: 0.7,
         max_tokens: 500
