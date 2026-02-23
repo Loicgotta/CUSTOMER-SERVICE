@@ -60,7 +60,7 @@ Si aucun document n'est mentionné de manière explicite, retourne VIDE.`
       const mentionedDoc = await this.detectDocumentMention(userMessage, agentId);
 
       // Récupérer les chunks pertinents de la documentation (filtrés si nécessaire)
-      const relevantChunks = await RAGService.searchRelevantChunks(agentId, userMessage, 3, mentionedDoc);
+      const relevantChunks = await RAGService.searchRelevantChunks(agentId, userMessage, 20, mentionedDoc);
 
       // Récupérer l'historique de conversation de la session
       const conversationHistory = Conversation.findBySessionId(sessionId);
