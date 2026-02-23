@@ -59,9 +59,39 @@ router.post('/extract', upload.single('file'), async (req, res) => {
         text = workbook.worksheets.map(sheet => {
           const rows = [];
           sheet.eachRow((row, rowNumber) => {
-            // Convertir la row en array de valeurs
-            const values = row.values.slice(1); // slice(1) pour enlever l'index 0 vide
-            rows.push(values.map(v => v ?? '').join(','));
+            // Convertir la row en array de valeurs avec gestion des types Excel
+            const values = row.values.slice(1).map(cellValue => {
+              // Gestion des valeurs nulles/undefined
+              if (cellValue === null || cellValue === undefined) return '';
+
+              // Gestion des objets Excel complexes
+              if (typeof cellValue === 'object') {
+                // Formule : extraire le résultat calculé
+                if (cellValue.formula !== undefined) {
+                  return String(cellValue.result ?? '');
+                }
+                // Date : convertir en format ISO lisible
+                if (cellValue instanceof Date) {
+                  return cellValue.toISOString().split('T')[0];
+                }
+                // Rich text : extraire le texte simple
+                if (cellValue.richText) {
+                  return cellValue.richText.map(t => t.text).join('');
+                }
+                // Autres objets : conversion sûre
+                return String(cellValue.text || cellValue.value || '');
+              }
+
+              // Conversion en string + échappement CSV
+              let str = String(cellValue);
+              // Échapper si contient virgule, guillemet ou retour à la ligne
+              if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                str = '"' + str.replace(/"/g, '""') + '"';
+              }
+              return str;
+            });
+
+            rows.push(values.join(','));
           });
           return `--- Feuille : ${sheet.name} ---\n${rows.join('\n')}`;
         }).join('\n\n');
