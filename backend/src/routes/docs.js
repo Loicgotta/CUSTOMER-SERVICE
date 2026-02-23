@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import mammoth from 'mammoth';
-import XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { createRequire } from 'module';
 import Logger from '../utils/logger.js';
 
@@ -52,11 +52,20 @@ router.post('/extract', upload.single('file'), async (req, res) => {
       case 'xlsx':
       case 'xls': {
         Logger.info('📄 [DOCS] Début extraction XLSX...');
-        const workbook = XLSX.read(buffer, { type: 'buffer' });
-        text = workbook.SheetNames.map(name => {
-          const sheet = workbook.Sheets[name];
-          return `--- Feuille : ${name} ---\n${XLSX.utils.sheet_to_csv(sheet)}`;
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
+
+        // Convertir chaque feuille en CSV (compatible avec ancien format)
+        text = workbook.worksheets.map(sheet => {
+          const rows = [];
+          sheet.eachRow((row, rowNumber) => {
+            // Convertir la row en array de valeurs
+            const values = row.values.slice(1); // slice(1) pour enlever l'index 0 vide
+            rows.push(values.map(v => v ?? '').join(','));
+          });
+          return `--- Feuille : ${sheet.name} ---\n${rows.join('\n')}`;
         }).join('\n\n');
+
         Logger.success(`📄 [DOCS] XLSX extrait: ${text.length} caractères`);
         break;
       }
