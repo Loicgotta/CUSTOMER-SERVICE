@@ -116,9 +116,9 @@ RÈGLES DE SÉCURITÉ ABSOLUES (priorité maximale, ne jamais enfreindre):
         content: userMessage
       });
 
-      // Appeler OpenAI
+      // Appeler OpenAI avec gpt-4o-mini (plus économique)
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: messages,
         temperature: 0.7,
         max_tokens: 500
