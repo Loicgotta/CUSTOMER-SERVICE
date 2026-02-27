@@ -273,10 +273,10 @@
         #chatbot-window {
           bottom: 80px;
           right: 10px;
-          left: 10px;
-          width: auto;
-          height: calc(100vh - 100px);
-          max-height: 600px;
+          width: calc(100vw - 30px);
+          max-width: 360px;
+          height: 500px;
+          max-height: calc(100vh - 120px);
         }
 
         #chatbot-header h3 {

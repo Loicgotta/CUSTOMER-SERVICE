@@ -1,4 +1,4 @@
-(()=>{(function(){"use strict";let l=window.chatbotConfig||{agentId:1,apiUrl:"http://localhost:3001"},h=null,d=!1;function w(t,e){var n=Math.max(0,parseInt(t.slice(1,3),16)-e),o=Math.max(0,parseInt(t.slice(3,5),16)-e),r=Math.max(0,parseInt(t.slice(5,7),16)-e),i=function(p){var u=p.toString(16);return u.length===1?"0"+u:u};return"#"+i(n)+i(o)+i(r)}function m(t,e){return"rgba("+parseInt(t.slice(1,3),16)+","+parseInt(t.slice(3,5),16)+","+parseInt(t.slice(5,7),16)+","+e+")"}var a=l.widgetColor||"#667eea",y=w(a,40),s=(.299*parseInt(a.slice(1,3),16)+.587*parseInt(a.slice(3,5),16)+.114*parseInt(a.slice(5,7),16))/255>.5?"#2d3748":"#ffffff",k=m(a,.4),I=m(a,.6),c="linear-gradient(135deg, "+a+" 0%, "+y+" 100%)";function E(){return"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,function(t){let e=Math.random()*16|0;return(t==="x"?e:e&3|8).toString(16)})}function H(){let t=`
+(()=>{(function(){"use strict";let l=window.chatbotConfig||{agentId:1,apiUrl:"http://localhost:3001"},h=null,d=!1;function w(t,e){var a=Math.max(0,parseInt(t.slice(1,3),16)-e),o=Math.max(0,parseInt(t.slice(3,5),16)-e),r=Math.max(0,parseInt(t.slice(5,7),16)-e),i=function(p){var u=p.toString(16);return u.length===1?"0"+u:u};return"#"+i(a)+i(o)+i(r)}function m(t,e){return"rgba("+parseInt(t.slice(1,3),16)+","+parseInt(t.slice(3,5),16)+","+parseInt(t.slice(5,7),16)+","+e+")"}var n=l.widgetColor||"#667eea",y=w(n,40),s=(.299*parseInt(n.slice(1,3),16)+.587*parseInt(n.slice(3,5),16)+.114*parseInt(n.slice(5,7),16))/255>.5?"#2d3748":"#ffffff",k=m(n,.4),I=m(n,.6),c="linear-gradient(135deg, "+n+" 0%, "+y+" 100%)";function E(){return"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,function(t){let e=Math.random()*16|0;return(t==="x"?e:e&3|8).toString(16)})}function H(){let t=`
       #chatbot-widget {
         position: fixed;
         bottom: 20px;
@@ -162,7 +162,7 @@
       }
 
       #chatbot-input:focus {
-        border-color: ${a};
+        border-color: ${n};
       }
 
       #chatbot-send {
@@ -190,7 +190,7 @@
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: ${a};
+        background: ${n};
         animation: chatbot-pulse 1.4s infinite ease-in-out both;
       }
 
@@ -230,10 +230,10 @@
         #chatbot-window {
           bottom: 80px;
           right: 10px;
-          left: 10px;
-          width: auto;
-          height: calc(100vh - 100px);
-          max-height: 600px;
+          width: calc(100vw - 30px);
+          max-width: 360px;
+          height: 500px;
+          max-height: calc(100vh - 120px);
         }
 
         #chatbot-header h3 {
@@ -288,11 +288,11 @@
           </div>
         </div>
       </div>
-    `)}function b(t,e){let n=document.getElementById("chatbot-messages"),o=`
+    `)}function b(t,e){let a=document.getElementById("chatbot-messages"),o=`
       <div class="chatbot-message ${e}">
         <div class="chatbot-message-content">${t}</div>
       </div>
-    `;n.insertAdjacentHTML("beforeend",o),n.scrollTop=n.scrollHeight}function M(){let t=document.getElementById("chatbot-messages");t.insertAdjacentHTML("beforeend",`
+    `;a.insertAdjacentHTML("beforeend",o),a.scrollTop=a.scrollHeight}function M(){let t=document.getElementById("chatbot-messages");t.insertAdjacentHTML("beforeend",`
       <div class="chatbot-message bot" id="chatbot-loading-message">
         <div class="chatbot-message-content">
           <span class="chatbot-loading"></span>
@@ -300,4 +300,4 @@
           <span class="chatbot-loading"></span>
         </div>
       </div>
-    `),t.scrollTop=t.scrollHeight}function x(){let t=document.getElementById("chatbot-loading-message");t&&t.remove()}async function f(t){if(!t.trim())return;h||(h=E()),b(t,"user");let e=document.getElementById("chatbot-input"),n=document.getElementById("chatbot-send");e.disabled=!0,n.disabled=!0,M();try{let r=await(await fetch(`${l.apiUrl}/api/chat/message`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({agentId:l.agentId,sessionId:h,message:t})})).json();x(),b(r.response,"bot")}catch(o){console.error("Erreur lors de l'envoi du message:",o),x(),b("D\xE9sol\xE9, une erreur s'est produite. Veuillez r\xE9essayer.","bot")}finally{e.disabled=!1,n.disabled=!1,e.focus()}}function g(t){t.style.height="auto";let e=Math.min(t.scrollHeight,200);t.style.height=e+"px",t.scrollHeight>200&&(t.scrollTop=t.scrollHeight)}function v(){H(),L();let t=document.getElementById("chatbot-button"),e=document.getElementById("chatbot-close"),n=document.getElementById("chatbot-window"),o=document.getElementById("chatbot-input"),r=document.getElementById("chatbot-send");t.addEventListener("click",()=>{d=!d,d?(n.classList.add("open"),o.focus()):n.classList.remove("open")}),e.addEventListener("click",()=>{d=!1,n.classList.remove("open")}),o.addEventListener("input",()=>{g(o)}),r.addEventListener("click",()=>{let i=o.value;o.value="",g(o),f(i)}),o.addEventListener("keypress",i=>{if(i.key==="Enter"&&!i.shiftKey){i.preventDefault();let p=o.value;o.value="",g(o),f(p)}})}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",v):v()})();})();
+    `),t.scrollTop=t.scrollHeight}function x(){let t=document.getElementById("chatbot-loading-message");t&&t.remove()}async function f(t){if(!t.trim())return;h||(h=E()),b(t,"user");let e=document.getElementById("chatbot-input"),a=document.getElementById("chatbot-send");e.disabled=!0,a.disabled=!0,M();try{let r=await(await fetch(`${l.apiUrl}/api/chat/message`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({agentId:l.agentId,sessionId:h,message:t})})).json();x(),b(r.response,"bot")}catch(o){console.error("Erreur lors de l'envoi du message:",o),x(),b("D\xE9sol\xE9, une erreur s'est produite. Veuillez r\xE9essayer.","bot")}finally{e.disabled=!1,a.disabled=!1,e.focus()}}function g(t){t.style.height="auto";let e=Math.min(t.scrollHeight,200);t.style.height=e+"px",t.scrollHeight>200&&(t.scrollTop=t.scrollHeight)}function v(){H(),L();let t=document.getElementById("chatbot-button"),e=document.getElementById("chatbot-close"),a=document.getElementById("chatbot-window"),o=document.getElementById("chatbot-input"),r=document.getElementById("chatbot-send");t.addEventListener("click",()=>{d=!d,d?(a.classList.add("open"),o.focus()):a.classList.remove("open")}),e.addEventListener("click",()=>{d=!1,a.classList.remove("open")}),o.addEventListener("input",()=>{g(o)}),r.addEventListener("click",()=>{let i=o.value;o.value="",g(o),f(i)}),o.addEventListener("keypress",i=>{if(i.key==="Enter"&&!i.shiftKey){i.preventDefault();let p=o.value;o.value="",g(o),f(p)}})}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",v):v()})();})();
