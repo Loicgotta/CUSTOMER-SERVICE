@@ -87,10 +87,25 @@
         display: none;
         flex-direction: column;
         overflow: hidden;
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
       }
 
       #chatbot-window.open {
         display: flex;
+        animation: chatbot-window-open 0.3s ease forwards;
+      }
+
+      @keyframes chatbot-window-open {
+        from {
+          opacity: 0;
+          transform: scale(0.95) translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
       }
 
       #chatbot-header {
@@ -274,9 +289,9 @@
           bottom: 80px;
           right: 10px;
           width: calc(100vw - 30px);
-          max-width: 360px;
-          height: 500px;
-          max-height: calc(100vh - 120px);
+          max-width: 340px;
+          height: 450px;
+          max-height: calc(100vh - 140px);
         }
 
         #chatbot-header h3 {
@@ -346,15 +361,47 @@
   }
 
   // Ajouter un message au chat
-  function addMessage(content, type) {
+  function addMessage(content, type, useTypewriter = false) {
     const messagesContainer = document.getElementById('chatbot-messages');
-    const messageHTML = `
-      <div class="chatbot-message ${type}">
-        <div class="chatbot-message-content">${content}</div>
-      </div>
-    `;
-    messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    if (type === 'bot' && useTypewriter) {
+      // Créer le conteneur vide pour l'effet typewriter
+      const messageHTML = `
+        <div class="chatbot-message ${type}">
+          <div class="chatbot-message-content" data-typewriter="true"></div>
+        </div>
+      `;
+      messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+
+      // Récupérer le dernier message ajouté
+      const messages = messagesContainer.querySelectorAll('.chatbot-message.bot');
+      const lastMessage = messages[messages.length - 1];
+      const contentElement = lastMessage.querySelector('.chatbot-message-content');
+
+      // Effet typewriter
+      let index = 0;
+      const speed = 20; // millisecondes par caractère
+
+      function typeNextChar() {
+        if (index < content.length) {
+          contentElement.textContent += content.charAt(index);
+          index++;
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          setTimeout(typeNextChar, speed);
+        }
+      }
+
+      typeNextChar();
+    } else {
+      // Message normal sans typewriter
+      const messageHTML = `
+        <div class="chatbot-message ${type}">
+          <div class="chatbot-message-content">${content}</div>
+        </div>
+      `;
+      messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
   }
 
   // Afficher l'indicateur de chargement
@@ -420,8 +467,8 @@
       // Masquer le chargement
       hideLoading();
 
-      // Ajouter la réponse du bot
-      addMessage(data.response, 'bot');
+      // Ajouter la réponse du bot avec effet typewriter
+      addMessage(data.response, 'bot', true);
 
     } catch (error) {
       console.error('Erreur lors de l\'envoi du message:', error);

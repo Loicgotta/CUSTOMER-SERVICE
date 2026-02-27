@@ -1,4 +1,4 @@
-(()=>{(function(){"use strict";let l=window.chatbotConfig||{agentId:1,apiUrl:"http://localhost:3001"},h=null,d=!1;function w(t,e){var a=Math.max(0,parseInt(t.slice(1,3),16)-e),o=Math.max(0,parseInt(t.slice(3,5),16)-e),r=Math.max(0,parseInt(t.slice(5,7),16)-e),i=function(p){var u=p.toString(16);return u.length===1?"0"+u:u};return"#"+i(a)+i(o)+i(r)}function m(t,e){return"rgba("+parseInt(t.slice(1,3),16)+","+parseInt(t.slice(3,5),16)+","+parseInt(t.slice(5,7),16)+","+e+")"}var n=l.widgetColor||"#667eea",y=w(n,40),s=(.299*parseInt(n.slice(1,3),16)+.587*parseInt(n.slice(3,5),16)+.114*parseInt(n.slice(5,7),16))/255>.5?"#2d3748":"#ffffff",k=m(n,.4),I=m(n,.6),c="linear-gradient(135deg, "+n+" 0%, "+y+" 100%)";function E(){return"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,function(t){let e=Math.random()*16|0;return(t==="x"?e:e&3|8).toString(16)})}function H(){let t=`
+(()=>{(function(){"use strict";let b=window.chatbotConfig||{agentId:1,apiUrl:"http://localhost:3001"},g=null,d=!1;function k(t,e){var n=Math.max(0,parseInt(t.slice(1,3),16)-e),o=Math.max(0,parseInt(t.slice(3,5),16)-e),i=Math.max(0,parseInt(t.slice(5,7),16)-e),a=function(h){var c=h.toString(16);return c.length===1?"0"+c:c};return"#"+a(n)+a(o)+a(i)}function x(t,e){return"rgba("+parseInt(t.slice(1,3),16)+","+parseInt(t.slice(3,5),16)+","+parseInt(t.slice(5,7),16)+","+e+")"}var s=b.widgetColor||"#667eea",I=k(s,40),r=(.299*parseInt(s.slice(1,3),16)+.587*parseInt(s.slice(3,5),16)+.114*parseInt(s.slice(5,7),16))/255>.5?"#2d3748":"#ffffff",M=x(s,.4),H=x(s,.6),l="linear-gradient(135deg, "+s+" 0%, "+I+" 100%)";function L(){return"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,function(t){let e=Math.random()*16|0;return(t==="x"?e:e&3|8).toString(16)})}function E(){let t=`
       #chatbot-widget {
         position: fixed;
         bottom: 20px;
@@ -11,10 +11,10 @@
         width: 60px;
         height: 60px;
         border-radius: 50%;
-        background: ${c};
+        background: ${l};
         border: none;
         cursor: pointer;
-        box-shadow: 0 4px 20px ${k};
+        box-shadow: 0 4px 20px ${M};
         display: flex;
         align-items: center;
         justify-content: center;
@@ -23,13 +23,13 @@
 
       #chatbot-button:hover {
         transform: scale(1.1);
-        box-shadow: 0 6px 30px ${I};
+        box-shadow: 0 6px 30px ${H};
       }
 
       #chatbot-button svg {
         width: 30px;
         height: 30px;
-        fill: ${s};
+        fill: ${r};
       }
 
       #chatbot-window {
@@ -44,15 +44,30 @@
         display: none;
         flex-direction: column;
         overflow: hidden;
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
       }
 
       #chatbot-window.open {
         display: flex;
+        animation: chatbot-window-open 0.3s ease forwards;
+      }
+
+      @keyframes chatbot-window-open {
+        from {
+          opacity: 0;
+          transform: scale(0.95) translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
       }
 
       #chatbot-header {
-        background: ${c};
-        color: ${s};
+        background: ${l};
+        color: ${r};
         padding: 1rem;
         display: flex;
         justify-content: space-between;
@@ -68,7 +83,7 @@
       #chatbot-close {
         background: transparent;
         border: none;
-        color: ${s};
+        color: ${r};
         font-size: 1.5rem;
         cursor: pointer;
         padding: 0;
@@ -115,8 +130,8 @@
       }
 
       .chatbot-message.user .chatbot-message-content {
-        background: ${c};
-        color: ${s};
+        background: ${l};
+        color: ${r};
       }
 
       #chatbot-input-area {
@@ -162,13 +177,13 @@
       }
 
       #chatbot-input:focus {
-        border-color: ${n};
+        border-color: ${s};
       }
 
       #chatbot-send {
         padding: 0.75rem 1.25rem;
-        background: ${c};
-        color: ${s};
+        background: ${l};
+        color: ${r};
         border: none;
         border-radius: 8px;
         cursor: pointer;
@@ -190,7 +205,7 @@
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: ${n};
+        background: ${s};
         animation: chatbot-pulse 1.4s infinite ease-in-out both;
       }
 
@@ -231,9 +246,9 @@
           bottom: 80px;
           right: 10px;
           width: calc(100vw - 30px);
-          max-width: 360px;
-          height: 500px;
-          max-height: calc(100vh - 120px);
+          max-width: 340px;
+          height: 450px;
+          max-height: calc(100vh - 140px);
         }
 
         #chatbot-header h3 {
@@ -254,7 +269,7 @@
           font-size: 0.85rem;
         }
       }
-    `,e=document.createElement("style");e.textContent=t,document.head.appendChild(e)}function L(){document.body.insertAdjacentHTML("beforeend",`
+    `,e=document.createElement("style");e.textContent=t,document.head.appendChild(e)}function T(){document.body.insertAdjacentHTML("beforeend",`
       <div id="chatbot-widget">
         <button id="chatbot-button" aria-label="Ouvrir le chat">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -288,11 +303,15 @@
           </div>
         </div>
       </div>
-    `)}function b(t,e){let a=document.getElementById("chatbot-messages"),o=`
-      <div class="chatbot-message ${e}">
-        <div class="chatbot-message-content">${t}</div>
-      </div>
-    `;a.insertAdjacentHTML("beforeend",o),a.scrollTop=a.scrollHeight}function M(){let t=document.getElementById("chatbot-messages");t.insertAdjacentHTML("beforeend",`
+    `)}function p(t,e,n=!1){let o=document.getElementById("chatbot-messages");if(e==="bot"&&n){let y=function(){m<t.length&&(c.textContent+=t.charAt(m),m++,o.scrollTop=o.scrollHeight,setTimeout(y,S))},i=`
+        <div class="chatbot-message ${e}">
+          <div class="chatbot-message-content" data-typewriter="true"></div>
+        </div>
+      `;o.insertAdjacentHTML("beforeend",i);let a=o.querySelectorAll(".chatbot-message.bot"),c=a[a.length-1].querySelector(".chatbot-message-content"),m=0,S=20;y()}else{let i=`
+        <div class="chatbot-message ${e}">
+          <div class="chatbot-message-content">${t}</div>
+        </div>
+      `;o.insertAdjacentHTML("beforeend",i),o.scrollTop=o.scrollHeight}}function z(){let t=document.getElementById("chatbot-messages");t.insertAdjacentHTML("beforeend",`
       <div class="chatbot-message bot" id="chatbot-loading-message">
         <div class="chatbot-message-content">
           <span class="chatbot-loading"></span>
@@ -300,4 +319,4 @@
           <span class="chatbot-loading"></span>
         </div>
       </div>
-    `),t.scrollTop=t.scrollHeight}function x(){let t=document.getElementById("chatbot-loading-message");t&&t.remove()}async function f(t){if(!t.trim())return;h||(h=E()),b(t,"user");let e=document.getElementById("chatbot-input"),a=document.getElementById("chatbot-send");e.disabled=!0,a.disabled=!0,M();try{let r=await(await fetch(`${l.apiUrl}/api/chat/message`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({agentId:l.agentId,sessionId:h,message:t})})).json();x(),b(r.response,"bot")}catch(o){console.error("Erreur lors de l'envoi du message:",o),x(),b("D\xE9sol\xE9, une erreur s'est produite. Veuillez r\xE9essayer.","bot")}finally{e.disabled=!1,a.disabled=!1,e.focus()}}function g(t){t.style.height="auto";let e=Math.min(t.scrollHeight,200);t.style.height=e+"px",t.scrollHeight>200&&(t.scrollTop=t.scrollHeight)}function v(){H(),L();let t=document.getElementById("chatbot-button"),e=document.getElementById("chatbot-close"),a=document.getElementById("chatbot-window"),o=document.getElementById("chatbot-input"),r=document.getElementById("chatbot-send");t.addEventListener("click",()=>{d=!d,d?(a.classList.add("open"),o.focus()):a.classList.remove("open")}),e.addEventListener("click",()=>{d=!1,a.classList.remove("open")}),o.addEventListener("input",()=>{g(o)}),r.addEventListener("click",()=>{let i=o.value;o.value="",g(o),f(i)}),o.addEventListener("keypress",i=>{if(i.key==="Enter"&&!i.shiftKey){i.preventDefault();let p=o.value;o.value="",g(o),f(p)}})}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",v):v()})();})();
+    `),t.scrollTop=t.scrollHeight}function f(){let t=document.getElementById("chatbot-loading-message");t&&t.remove()}async function v(t){if(!t.trim())return;g||(g=L()),p(t,"user");let e=document.getElementById("chatbot-input"),n=document.getElementById("chatbot-send");e.disabled=!0,n.disabled=!0,z();try{let i=await(await fetch(`${b.apiUrl}/api/chat/message`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({agentId:b.agentId,sessionId:g,message:t})})).json();f(),p(i.response,"bot",!0)}catch(o){console.error("Erreur lors de l'envoi du message:",o),f(),p("D\xE9sol\xE9, une erreur s'est produite. Veuillez r\xE9essayer.","bot")}finally{e.disabled=!1,n.disabled=!1,e.focus()}}function u(t){t.style.height="auto";let e=Math.min(t.scrollHeight,200);t.style.height=e+"px",t.scrollHeight>200&&(t.scrollTop=t.scrollHeight)}function w(){E(),T();let t=document.getElementById("chatbot-button"),e=document.getElementById("chatbot-close"),n=document.getElementById("chatbot-window"),o=document.getElementById("chatbot-input"),i=document.getElementById("chatbot-send");t.addEventListener("click",()=>{d=!d,d?(n.classList.add("open"),o.focus()):n.classList.remove("open")}),e.addEventListener("click",()=>{d=!1,n.classList.remove("open")}),o.addEventListener("input",()=>{u(o)}),i.addEventListener("click",()=>{let a=o.value;o.value="",u(o),v(a)}),o.addEventListener("keypress",a=>{if(a.key==="Enter"&&!a.shiftKey){a.preventDefault();let h=o.value;o.value="",u(o),v(h)}})}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",w):w()})();})();
