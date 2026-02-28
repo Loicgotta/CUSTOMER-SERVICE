@@ -2,7 +2,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import ChatService from '../services/chatService.js';
 import Conversation from '../models/Conversation.js';
-import db from '../database/db.js';
+import pool from '../database/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -62,7 +62,7 @@ router.post('/message', chatLimiter, async (req, res) => {
 });
 
 // Récupérer l'historique d'une session (rate limited pour sécurité)
-router.get('/history/:sessionId', historyLimiter, (req, res) => {
+router.get('/history/:sessionId', historyLimiter, async (req, res) => {
   try {
     const { sessionId } = req.params;
 
@@ -72,7 +72,7 @@ router.get('/history/:sessionId', historyLimiter, (req, res) => {
       return res.status(400).json({ error: 'Format de session invalide' });
     }
 
-    const conversations = Conversation.findBySessionId(sessionId);
+    const conversations = await Conversation.findBySessionId(sessionId);
 
     // Ne pas révéler si la session existe ou non (anti-énumération)
     res.json(conversations || []);
@@ -83,12 +83,13 @@ router.get('/history/:sessionId', historyLimiter, (req, res) => {
 });
 
 // Récupérer toutes les conversations d'un agent (protégé : propriétaire uniquement)
-router.get('/agent/:agentId', authenticateToken, (req, res) => {
+router.get('/agent/:agentId', authenticateToken, async (req, res) => {
   try {
     const agentId = req.params.agentId;
 
     // Vérifier que l'agent appartient à l'utilisateur connecté
-    const agent = db.prepare('SELECT user_id FROM agents WHERE id = ?').get(agentId);
+    const agentResult = await pool.query('SELECT user_id FROM agents WHERE id = $1', [agentId]);
+    const agent = agentResult.rows[0];
     if (!agent) {
       return res.status(404).json({ error: 'Agent introuvable' });
     }
@@ -96,7 +97,7 @@ router.get('/agent/:agentId', authenticateToken, (req, res) => {
       return res.status(403).json({ error: 'Accès refusé' });
     }
 
-    const conversations = Conversation.findByAgentId(agentId);
+    const conversations = await Conversation.findByAgentId(agentId);
     res.json(conversations);
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });

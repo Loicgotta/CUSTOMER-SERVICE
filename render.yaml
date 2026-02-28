@@ -13,9 +13,15 @@ services:
         value: production
       - key: PORT
         value: 3001
+      - key: DATABASE_URL
+        sync: false  # À configurer manuellement dans le dashboard Render
       - key: OPENAI_API_KEY
         sync: false  # À configurer manuellement dans le dashboard Render
       - key: JWT_SECRET
+        sync: false  # À configurer manuellement dans le dashboard Render
+      - key: ADMIN_EMAIL
+        sync: false  # À configurer manuellement dans le dashboard Render
+      - key: ADMIN_PASSWORD
         sync: false  # À configurer manuellement dans le dashboard Render
       - key: WEBHOOK_URL
         value: https://n8n.srv793731.hstgr.cloud/webhook/mail-rapport

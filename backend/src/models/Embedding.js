@@ -1,49 +1,53 @@
-import db from '../database/db.js';
+import pool from '../database/db.js';
 
 class Embedding {
-  static create({ agentId, chunkText, embedding, documentName }) {
-    const stmt = db.prepare(`
-      INSERT INTO embeddings (agent_id, chunk_text, embedding, document_name)
-      VALUES (?, ?, ?, ?)
-    `);
-    const result = stmt.run(agentId, chunkText, JSON.stringify(embedding), documentName || 'Documentation');
-    return result.lastInsertRowid;
+  static async create({ agentId, chunkText, embedding, documentName }) {
+    const result = await pool.query(
+      `INSERT INTO embeddings (agent_id, chunk_text, embedding, document_name)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id`,
+      [agentId, chunkText, JSON.stringify(embedding), documentName || 'Documentation']
+    );
+    return result.rows[0].id;
   }
 
-  static findByAgentId(agentId, documentName = null) {
-    let stmt;
-    let results;
+  static async findByAgentId(agentId, documentName = null) {
+    let result;
     if (documentName) {
-      stmt = db.prepare(`
-        SELECT * FROM embeddings
-        WHERE agent_id = ? AND document_name = ?
-      `);
-      results = stmt.all(agentId, documentName);
+      result = await pool.query(
+        `SELECT * FROM embeddings
+         WHERE agent_id = $1 AND document_name = $2`,
+        [agentId, documentName]
+      );
     } else {
-      stmt = db.prepare(`
-        SELECT * FROM embeddings
-        WHERE agent_id = ?
-      `);
-      results = stmt.all(agentId);
+      result = await pool.query(
+        `SELECT * FROM embeddings
+         WHERE agent_id = $1`,
+        [agentId]
+      );
     }
-    return results.map(row => ({
+    return result.rows.map(row => ({
       ...row,
       embedding: JSON.parse(row.embedding)
     }));
   }
 
-  static deleteByAgentId(agentId) {
-    const stmt = db.prepare('DELETE FROM embeddings WHERE agent_id = ?');
-    return stmt.run(agentId);
+  static async deleteByAgentId(agentId) {
+    const result = await pool.query(
+      'DELETE FROM embeddings WHERE agent_id = $1',
+      [agentId]
+    );
+    return result;
   }
 
-  static getDocumentNames(agentId) {
-    const stmt = db.prepare(`
-      SELECT DISTINCT document_name FROM embeddings
-      WHERE agent_id = ?
-      ORDER BY document_name
-    `);
-    return stmt.all(agentId).map(row => row.document_name);
+  static async getDocumentNames(agentId) {
+    const result = await pool.query(
+      `SELECT DISTINCT document_name FROM embeddings
+       WHERE agent_id = $1
+       ORDER BY document_name`,
+      [agentId]
+    );
+    return result.rows.map(row => row.document_name);
   }
 }
 

@@ -15,7 +15,7 @@ import promptRouter from './routes/prompt.js';
 import ReportService from './services/reportService.js';
 import Logger from './utils/logger.js';
 import { authenticateToken, requireAdmin } from './middleware/auth.js';
-import db from './database/db.js'; // Initialiser la DB et importer l'instance
+import { initializeDatabase } from './database/db.js';
 
 dotenv.config();
 
@@ -25,9 +25,6 @@ if (!process.env.OPENAI_API_KEY) {
   console.error('⚠️  L\'application va démarrer mais les fonctionnalités IA ne fonctionneront pas');
   console.error('💡 Ajoutez OPENAI_API_KEY dans votre fichier .env ou dans les variables d\'environnement Render');
 }
-
-// Note: JWT_SECRET n'est plus requis ici car il est généré automatiquement
-// et stocké dans la base de données (voir database/db.js)
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -165,11 +162,21 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
-// Démarrer le serveur
-app.listen(PORT, () => {
-  Logger.success(`Serveur démarré sur le port ${PORT}`);
-  Logger.info(`📊 Dashboard: http://localhost:${PORT}`);
-  Logger.info(`📧 Rapports disponibles via le bouton "Envoyer Rapport" dans l'interface`);
-});
+// Initialiser la base de données puis démarrer le serveur
+async function startServer() {
+  try {
+    await initializeDatabase();
+    app.listen(PORT, () => {
+      Logger.success(`Serveur démarré sur le port ${PORT}`);
+      Logger.info(`📊 Dashboard: http://localhost:${PORT}`);
+      Logger.info(`📧 Rapports disponibles via le bouton "Envoyer Rapport" dans l'interface`);
+    });
+  } catch (error) {
+    console.error('❌ Impossible de démarrer le serveur:', error.message);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 export default app;

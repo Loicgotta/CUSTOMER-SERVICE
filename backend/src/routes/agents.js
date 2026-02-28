@@ -26,7 +26,7 @@ router.post('/', async (req, res) => {
 
     // Créer l'agent lié à l'utilisateur connecté
     Logger.info('🤖 [AGENT] Création de l\'agent dans la DB...');
-    const agentId = Agent.create({
+    const agentId = await Agent.create({
       userId: req.user.userId,
       name,
       prompt,
@@ -56,7 +56,7 @@ router.post('/', async (req, res) => {
           id: agentId,
           message: 'Agent créé mais erreur lors de l\'indexation de la documentation',
           warning: ragError.message,
-          agent: Agent.findById(agentId, req.user.userId)
+          agent: await Agent.findById(agentId, req.user.userId)
         });
       }
     } else {
@@ -67,7 +67,7 @@ router.post('/', async (req, res) => {
     res.status(201).json({
       id: agentId,
       message: 'Agent créé avec succès',
-      agent: Agent.findById(agentId, req.user.userId)
+      agent: await Agent.findById(agentId, req.user.userId)
     });
   } catch (error) {
     Logger.error('❌ [AGENT] Erreur lors de la création de l\'agent:', error);
@@ -77,9 +77,9 @@ router.post('/', async (req, res) => {
 });
 
 // Récupérer tous les agents de l'utilisateur connecté
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const agents = Agent.findAll(req.user.userId);
+    const agents = await Agent.findAll(req.user.userId);
     res.json(agents);
   } catch (error) {
     Logger.error('Erreur lors de la récupération des agents:', error);
@@ -88,9 +88,9 @@ router.get('/', (req, res) => {
 });
 
 // Récupérer un agent par ID (seulement si appartient à l'utilisateur)
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const agent = Agent.findById(req.params.id, req.user.userId);
+    const agent = await Agent.findById(req.params.id, req.user.userId);
     if (!agent) {
       return res.status(404).json({ error: 'Agent non trouvé ou non autorisé' });
     }
@@ -102,13 +102,13 @@ router.get('/:id', (req, res) => {
 });
 
 // Récupérer la liste des documents d'un agent (seulement si appartient à l'utilisateur)
-router.get('/:id/documents', (req, res) => {
+router.get('/:id/documents', async (req, res) => {
   try {
-    const agent = Agent.findById(req.params.id, req.user.userId);
+    const agent = await Agent.findById(req.params.id, req.user.userId);
     if (!agent) {
       return res.status(404).json({ error: 'Agent non trouvé ou non autorisé' });
     }
-    const documentNames = Embedding.getDocumentNames(req.params.id);
+    const documentNames = await Embedding.getDocumentNames(req.params.id);
     res.json({ documents: documentNames });
   } catch (error) {
     Logger.error('Erreur lors de la récupération des documents:', error);
@@ -122,12 +122,12 @@ router.put('/:id', async (req, res) => {
     const { name, prompt, documentation, documents, email, color } = req.body;
     const agentId = req.params.id;
 
-    const agent = Agent.findById(agentId, req.user.userId);
+    const agent = await Agent.findById(agentId, req.user.userId);
     if (!agent) {
       return res.status(404).json({ error: 'Agent non trouvé ou non autorisé' });
     }
 
-    Agent.update(agentId, {
+    await Agent.update(agentId, {
       name: name !== undefined ? name : agent.name,
       prompt: prompt || agent.prompt,
       documentation: '', // On ne stocke plus la doc en DB
@@ -146,14 +146,14 @@ router.put('/:id', async (req, res) => {
         return res.status(200).json({
           message: 'Agent mis à jour mais erreur lors de l\'indexation',
           warning: ragError.message,
-          agent: Agent.findById(agentId, req.user.userId)
+          agent: await Agent.findById(agentId, req.user.userId)
         });
       }
     }
 
     res.json({
       message: 'Agent mis à jour',
-      agent: Agent.findById(agentId, req.user.userId)
+      agent: await Agent.findById(agentId, req.user.userId)
     });
   } catch (error) {
     Logger.error('Erreur lors de la mise à jour de l\'agent:', error);
@@ -162,21 +162,21 @@ router.put('/:id', async (req, res) => {
 });
 
 // Supprimer un agent (seulement si appartient à l'utilisateur)
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const agent = Agent.findById(req.params.id, req.user.userId);
+    const agent = await Agent.findById(req.params.id, req.user.userId);
     if (!agent) {
       return res.status(404).json({ error: 'Agent non trouvé ou non autorisé' });
     }
 
     // Supprimer les embeddings associés
-    Embedding.deleteByAgentId(req.params.id);
+    await Embedding.deleteByAgentId(req.params.id);
 
     // Supprimer les conversations associées
-    Conversation.deleteByAgentId(req.params.id);
+    await Conversation.deleteByAgentId(req.params.id);
 
     // Supprimer l'agent
-    Agent.delete(req.params.id, req.user.userId);
+    await Agent.delete(req.params.id, req.user.userId);
 
     res.json({ message: 'Agent supprimé avec toutes ses données' });
   } catch (error) {

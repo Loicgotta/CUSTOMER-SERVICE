@@ -51,7 +51,7 @@ class RAGService {
         : [{ name: 'Documentation', content: documents }];
 
       // Supprimer les anciens embeddings
-      Embedding.deleteByAgentId(agentId);
+      await Embedding.deleteByAgentId(agentId);
 
       let totalChunks = 0;
 
@@ -65,7 +65,7 @@ class RAGService {
         // Créer des embeddings pour chaque chunk avec le nom du document
         for (const chunk of chunks) {
           const embedding = await this.createEmbedding(chunk);
-          Embedding.create({
+          await Embedding.create({
             agentId,
             chunkText: chunk,
             embedding,
@@ -100,7 +100,7 @@ class RAGService {
       const queryEmbedding = await this.createEmbedding(query);
 
       // Récupérer les embeddings de l'agent (filtrés par document si spécifié)
-      const embeddings = Embedding.findByAgentId(agentId, documentName);
+      const embeddings = await Embedding.findByAgentId(agentId, documentName);
 
       if (embeddings.length === 0) {
         return [];

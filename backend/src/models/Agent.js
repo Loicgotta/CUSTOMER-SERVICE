@@ -1,57 +1,69 @@
-import db from '../database/db.js';
+import pool from '../database/db.js';
 
 class Agent {
-  static create({ userId, name, prompt, documentation, email, color }) {
-    const stmt = db.prepare(`
-      INSERT INTO agents (user_id, name, prompt, documentation, email, widget_color)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
-    const result = stmt.run(userId, name || null, prompt, documentation, email, color || '#667eea');
-    return result.lastInsertRowid;
+  static async create({ userId, name, prompt, documentation, email, color }) {
+    const result = await pool.query(
+      `INSERT INTO agents (user_id, name, prompt, documentation, email, widget_color)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id`,
+      [userId, name || null, prompt, documentation, email, color || '#667eea']
+    );
+    return result.rows[0].id;
   }
 
-  static findById(id, userId = null) {
+  static async findById(id, userId = null) {
     if (userId) {
-      const stmt = db.prepare('SELECT * FROM agents WHERE id = ? AND user_id = ?');
-      return stmt.get(id, userId);
+      const result = await pool.query(
+        'SELECT * FROM agents WHERE id = $1 AND user_id = $2',
+        [id, userId]
+      );
+      return result.rows[0] || null;
     }
-    const stmt = db.prepare('SELECT * FROM agents WHERE id = ?');
-    return stmt.get(id);
+    const result = await pool.query('SELECT * FROM agents WHERE id = $1', [id]);
+    return result.rows[0] || null;
   }
 
-  static findAll(userId = null) {
+  static async findAll(userId = null) {
     if (userId) {
-      const stmt = db.prepare('SELECT * FROM agents WHERE user_id = ? ORDER BY created_at DESC');
-      return stmt.all(userId);
+      const result = await pool.query(
+        'SELECT * FROM agents WHERE user_id = $1 ORDER BY created_at DESC',
+        [userId]
+      );
+      return result.rows;
     }
-    const stmt = db.prepare('SELECT * FROM agents ORDER BY created_at DESC');
-    return stmt.all();
+    const result = await pool.query('SELECT * FROM agents ORDER BY created_at DESC');
+    return result.rows;
   }
 
-  static update(id, { name, prompt, documentation, email, color }, userId = null) {
+  static async update(id, { name, prompt, documentation, email, color }, userId = null) {
     if (userId) {
-      const stmt = db.prepare(`
-        UPDATE agents
-        SET name = ?, prompt = ?, documentation = ?, email = ?, widget_color = ?
-        WHERE id = ? AND user_id = ?
-      `);
-      return stmt.run(name || null, prompt, documentation, email, color || '#667eea', id, userId);
+      const result = await pool.query(
+        `UPDATE agents
+         SET name = $1, prompt = $2, documentation = $3, email = $4, widget_color = $5
+         WHERE id = $6 AND user_id = $7`,
+        [name || null, prompt, documentation, email, color || '#667eea', id, userId]
+      );
+      return result;
     }
-    const stmt = db.prepare(`
-      UPDATE agents
-      SET name = ?, prompt = ?, documentation = ?, email = ?, widget_color = ?
-      WHERE id = ?
-    `);
-    return stmt.run(name || null, prompt, documentation, email, color || '#667eea', id);
+    const result = await pool.query(
+      `UPDATE agents
+       SET name = $1, prompt = $2, documentation = $3, email = $4, widget_color = $5
+       WHERE id = $6`,
+      [name || null, prompt, documentation, email, color || '#667eea', id]
+    );
+    return result;
   }
 
-  static delete(id, userId = null) {
+  static async delete(id, userId = null) {
     if (userId) {
-      const stmt = db.prepare('DELETE FROM agents WHERE id = ? AND user_id = ?');
-      return stmt.run(id, userId);
+      const result = await pool.query(
+        'DELETE FROM agents WHERE id = $1 AND user_id = $2',
+        [id, userId]
+      );
+      return result;
     }
-    const stmt = db.prepare('DELETE FROM agents WHERE id = ?');
-    return stmt.run(id);
+    const result = await pool.query('DELETE FROM agents WHERE id = $1', [id]);
+    return result;
   }
 }
 

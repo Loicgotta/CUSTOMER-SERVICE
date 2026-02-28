@@ -1,16 +1,16 @@
-import Database from 'better-sqlite3';
+import pg from 'pg';
 import bcrypt from 'bcryptjs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+
+const { Pool } = pg;
 
 // Charger les variables d'environnement
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const db = new Database(path.join(__dirname, '../../data/chatbot.db'));
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 // Créer le compte admin à partir des variables d'environnement
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
@@ -25,7 +25,8 @@ if (!ADMIN_PASSWORD) {
 
 try {
   // Vérifier si l'admin existe déjà
-  const existingAdmin = db.prepare('SELECT id FROM users WHERE email = ?').get(ADMIN_EMAIL);
+  const existingAdminResult = await pool.query('SELECT id FROM users WHERE email = $1', [ADMIN_EMAIL]);
+  const existingAdmin = existingAdminResult.rows[0];
 
   if (existingAdmin) {
     console.log('✅ Le compte admin existe déjà (ID:', existingAdmin.id, ')');
@@ -35,13 +36,14 @@ try {
     const passwordHash = bcrypt.hashSync(ADMIN_PASSWORD, salt);
 
     // Insérer l'admin
-    const stmt = db.prepare(`
-      INSERT INTO users (email, password_hash, name, is_admin, last_activity)
-      VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
-    `);
+    const result = await pool.query(
+      `INSERT INTO users (email, password_hash, name, is_admin, last_activity)
+       VALUES ($1, $2, $3, TRUE, CURRENT_TIMESTAMP)
+       RETURNING id`,
+      [ADMIN_EMAIL, passwordHash, ADMIN_NAME]
+    );
 
-    const result = stmt.run(ADMIN_EMAIL, passwordHash, ADMIN_NAME);
-    console.log('✅ Compte admin créé avec succès (ID:', result.lastInsertRowid, ')');
+    console.log('✅ Compte admin créé avec succès (ID:', result.rows[0].id, ')');
     console.log('📧 Email:', ADMIN_EMAIL);
     console.log('🔑 Mot de passe: [masqué]');
   }
@@ -50,4 +52,4 @@ try {
   process.exit(1);
 }
 
-db.close();
+await pool.end();

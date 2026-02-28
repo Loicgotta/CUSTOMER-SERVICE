@@ -1,6 +1,6 @@
 import express from 'express';
 import User from '../models/User.js';
-import db from '../database/db.js';
+import pool from '../database/db.js';
 import { generateToken, authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -30,22 +30,22 @@ router.post('/register', async (req, res) => {
     }
 
     // Anti-énumération : même message si l'email existe déjà
-    const existingUser = User.findByEmail(email.toLowerCase());
+    const existingUser = await User.findByEmail(email.toLowerCase());
     if (existingUser) {
       return res.status(400).json({ error: 'Impossible de créer ce compte. Vérifiez les informations saisies.' });
     }
 
     // Créer l'utilisateur
-    const userId = User.create({ email: email.toLowerCase(), password, name: name.trim() });
+    const userId = await User.create({ email: email.toLowerCase(), password, name: name.trim() });
 
     // Mettre à jour last_activity à la création
-    User.updateActivity(userId);
+    await User.updateActivity(userId);
 
     // Générer un token
     const token = generateToken(userId, email.toLowerCase());
 
     // Récupérer l'utilisateur créé (sans le mot de passe)
-    const user = User.findById(userId);
+    const user = await User.findById(userId);
 
     res.status(201).json({
       message: 'Inscription réussie',
@@ -68,7 +68,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Trouver l'utilisateur
-    const user = User.findByEmail(email.toLowerCase());
+    const user = await User.findByEmail(email.toLowerCase());
     if (!user) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
@@ -80,7 +80,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Mettre à jour last_activity à la connexion
-    User.updateActivity(user.id);
+    await User.updateActivity(user.id);
 
     // Générer un token
     const token = generateToken(user.id, user.email);
@@ -99,9 +99,9 @@ router.post('/login', async (req, res) => {
 });
 
 // GET /api/auth/me - Récupérer les informations de l'utilisateur connecté
-router.get('/me', authenticateToken, (req, res) => {
+router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const user = User.findById(req.user.userId);
+    const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
@@ -118,12 +118,12 @@ router.post('/logout', authenticateToken, (req, res) => {
 });
 
 // DELETE /api/auth/account - Droit à l'oubli (RGPD Art. 17)
-router.delete('/account', authenticateToken, (req, res) => {
+router.delete('/account', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
 
     // Vérifier que l'utilisateur existe
-    const user = User.findById(userId);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
@@ -134,7 +134,7 @@ router.delete('/account', authenticateToken, (req, res) => {
     }
 
     // Supprimer toutes les données liées (CASCADE sur agents → conversations + embeddings)
-    User.delete(userId);
+    await User.delete(userId);
 
     res.json({ message: 'Compte et données associées supprimés définitivement.' });
   } catch (error) {
@@ -143,25 +143,31 @@ router.delete('/account', authenticateToken, (req, res) => {
 });
 
 // GET /api/auth/export - Export des données personnelles (RGPD Art. 20)
-router.get('/export', authenticateToken, (req, res) => {
+router.get('/export', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    const user = User.findById(userId);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
 
     // Récupérer tous les agents de l'utilisateur
-    const agents = db.prepare('SELECT id, email, prompt, documentation, widget_color, created_at FROM agents WHERE user_id = ?').all(userId);
+    const agentsResult = await pool.query(
+      'SELECT id, email, prompt, documentation, widget_color, created_at FROM agents WHERE user_id = $1',
+      [userId]
+    );
+    const agents = agentsResult.rows;
 
     // Récupérer les conversations pour chaque agent
-    const agentsWithConversations = agents.map(agent => {
-      const conversations = db.prepare(
-        'SELECT session_id, user_message, bot_response, created_at FROM conversations WHERE agent_id = ? ORDER BY created_at ASC'
-      ).all(agent.id);
-      return { ...agent, conversations };
-    });
+    const agentsWithConversations = [];
+    for (const agent of agents) {
+      const convsResult = await pool.query(
+        'SELECT session_id, user_message, bot_response, created_at FROM conversations WHERE agent_id = $1 ORDER BY created_at ASC',
+        [agent.id]
+      );
+      agentsWithConversations.push({ ...agent, conversations: convsResult.rows });
+    }
 
     const exportData = {
       exported_at: new Date().toISOString(),

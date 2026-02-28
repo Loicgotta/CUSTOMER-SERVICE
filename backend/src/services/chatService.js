@@ -17,7 +17,7 @@ class ChatService {
   static async detectDocumentMention(userMessage, agentId) {
     try {
       // Récupérer la liste des documents disponibles
-      const documentNames = Embedding.getDocumentNames(agentId);
+      const documentNames = await Embedding.getDocumentNames(agentId);
 
       if (documentNames.length === 0) return null;
 
@@ -51,7 +51,7 @@ Si aucun document n'est mentionné de manière explicite, retourne VIDE.`
   static async processMessage(agentId, sessionId, userMessage) {
     try {
       // Récupérer l'agent
-      const agent = Agent.findById(agentId);
+      const agent = await Agent.findById(agentId);
       if (!agent) {
         throw new Error('Agent non trouvé');
       }
@@ -63,7 +63,7 @@ Si aucun document n'est mentionné de manière explicite, retourne VIDE.`
       const relevantChunks = await RAGService.searchRelevantChunks(agentId, userMessage, 20, mentionedDoc);
 
       // Récupérer l'historique de conversation de la session
-      const conversationHistory = Conversation.findBySessionId(sessionId);
+      const conversationHistory = await Conversation.findBySessionId(sessionId);
 
       // Construire le contexte avec la documentation
       let context = agent.prompt + '\n\n';
@@ -127,7 +127,7 @@ RÈGLES DE SÉCURITÉ ABSOLUES (priorité maximale, ne jamais enfreindre):
       const botResponse = response.choices[0].message.content;
 
       // Sauvegarder la conversation
-      Conversation.create({
+      await Conversation.create({
         agentId,
         sessionId,
         userMessage,
