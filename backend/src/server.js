@@ -15,7 +15,7 @@ import promptRouter from './routes/prompt.js';
 import ReportService from './services/reportService.js';
 import Logger from './utils/logger.js';
 import { authenticateToken, requireAdmin } from './middleware/auth.js';
-import db from './database/db.js'; // Initialiser la DB et importer l'instance
+import pool, { initDb } from './database/db.js';
 
 dotenv.config();
 
@@ -165,11 +165,16 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
-// Démarrer le serveur
-app.listen(PORT, () => {
-  Logger.success(`Serveur démarré sur le port ${PORT}`);
-  Logger.info(`📊 Dashboard: http://localhost:${PORT}`);
-  Logger.info(`📧 Rapports disponibles via le bouton "Envoyer Rapport" dans l'interface`);
+// Initialiser la DB puis démarrer le serveur
+initDb().then(() => {
+  app.listen(PORT, () => {
+    Logger.success(`Serveur démarré sur le port ${PORT}`);
+    Logger.info(`Dashboard: http://localhost:${PORT}`);
+    Logger.info(`Rapports disponibles via le bouton "Envoyer Rapport" dans l'interface`);
+  });
+}).catch(err => {
+  console.error('Erreur fatale lors de l\'initialisation de la base de données:', err);
+  process.exit(1);
 });
 
 export default app;

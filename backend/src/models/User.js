@@ -1,96 +1,91 @@
-import db from '../database/db.js';
+import pool from '../database/db.js';
 import bcrypt from 'bcryptjs';
 
 class User {
-  static create({ email, password, name }) {
-    // Hasher le mot de passe
+  static async create({ email, password, name }) {
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync(password, salt);
 
-    const stmt = db.prepare(`
-      INSERT INTO users (email, password_hash, name)
-      VALUES (?, ?, ?)
-    `);
-    const result = stmt.run(email, passwordHash, name);
-    return result.lastInsertRowid;
+    const result = await pool.query(
+      `INSERT INTO users (email, password_hash, name)
+       VALUES ($1, $2, $3) RETURNING id`,
+      [email, passwordHash, name]
+    );
+    return result.rows[0].id;
   }
 
-  static findById(id) {
-    const stmt = db.prepare('SELECT id, email, name, created_at, is_admin FROM users WHERE id = ?');
-    return stmt.get(id);
+  static async findById(id) {
+    const result = await pool.query(
+      'SELECT id, email, name, created_at, is_admin FROM users WHERE id = $1',
+      [id]
+    );
+    return result.rows[0] || null;
   }
 
-  static findByEmail(email) {
-    const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
-    return stmt.get(email);
+  static async findByEmail(email) {
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    return result.rows[0] || null;
   }
 
-  static findAll() {
-    const stmt = db.prepare('SELECT id, email, name, created_at FROM users ORDER BY created_at DESC');
-    return stmt.all();
+  static async findAll() {
+    const result = await pool.query(
+      'SELECT id, email, name, created_at FROM users ORDER BY created_at DESC'
+    );
+    return result.rows;
   }
 
   static verifyPassword(plainPassword, hash) {
     return bcrypt.compareSync(plainPassword, hash);
   }
 
-  static update(id, { email, name }) {
-    const stmt = db.prepare(`
-      UPDATE users
-      SET email = ?, name = ?
-      WHERE id = ?
-    `);
-    return stmt.run(email, name, id);
+  static async update(id, { email, name }) {
+    const result = await pool.query(
+      `UPDATE users SET email = $1, name = $2 WHERE id = $3`,
+      [email, name, id]
+    );
+    return result;
   }
 
-  static updatePassword(id, newPassword) {
+  static async updatePassword(id, newPassword) {
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync(newPassword, salt);
 
-    const stmt = db.prepare(`
-      UPDATE users
-      SET password_hash = ?
-      WHERE id = ?
-    `);
-    return stmt.run(passwordHash, id);
+    const result = await pool.query(
+      `UPDATE users SET password_hash = $1 WHERE id = $2`,
+      [passwordHash, id]
+    );
+    return result;
   }
 
-  static delete(id) {
-    // Suppression en cascade manuelle (car conversations/embeddings n'ont pas ON DELETE CASCADE)
+  static async delete(id) {
+    // Recuperer tous les agents de l'utilisateur
+    const agentsResult = await pool.query('SELECT id FROM agents WHERE user_id = $1', [id]);
 
-    // 1. Récupérer tous les agents de l'utilisateur
-    const agents = db.prepare('SELECT id FROM agents WHERE user_id = ?').all(id);
+    // Pour chaque agent, supprimer ses conversations et embeddings
+    for (const agent of agentsResult.rows) {
+      await pool.query('DELETE FROM conversations WHERE agent_id = $1', [agent.id]);
+      await pool.query('DELETE FROM embeddings WHERE agent_id = $1', [agent.id]);
+    }
 
-    // 2. Pour chaque agent, supprimer ses conversations et embeddings
-    const deleteConversations = db.prepare('DELETE FROM conversations WHERE agent_id = ?');
-    const deleteEmbeddings = db.prepare('DELETE FROM embeddings WHERE agent_id = ?');
+    // Supprimer les agents
+    await pool.query('DELETE FROM agents WHERE user_id = $1', [id]);
 
-    agents.forEach(agent => {
-      deleteConversations.run(agent.id);
-      deleteEmbeddings.run(agent.id);
-    });
-
-    // 3. Supprimer les agents (maintenant qu'ils n'ont plus de dépendances)
-    db.prepare('DELETE FROM agents WHERE user_id = ?').run(id);
-
-    // 4. Supprimer l'utilisateur
-    const stmt = db.prepare('DELETE FROM users WHERE id = ?');
-    return stmt.run(id);
+    // Supprimer l'utilisateur
+    const result = await pool.query('DELETE FROM users WHERE id = $1', [id]);
+    return result;
   }
 
-  static updateActivity(userId) {
-    const stmt = db.prepare(`
-      UPDATE users
-      SET last_activity = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `);
-    return stmt.run(userId);
+  static async updateActivity(userId) {
+    const result = await pool.query(
+      `UPDATE users SET last_activity = NOW() WHERE id = $1`,
+      [userId]
+    );
+    return result;
   }
 
-  static getLastActivity(userId) {
-    const stmt = db.prepare('SELECT last_activity FROM users WHERE id = ?');
-    const result = stmt.get(userId);
-    return result?.last_activity;
+  static async getLastActivity(userId) {
+    const result = await pool.query('SELECT last_activity FROM users WHERE id = $1', [userId]);
+    return result.rows[0]?.last_activity;
   }
 }
 

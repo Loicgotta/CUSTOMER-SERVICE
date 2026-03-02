@@ -1,6 +1,6 @@
 import express from 'express';
 import User from '../models/User.js';
-import db from '../database/db.js';
+import pool from '../database/db.js';
 import { generateToken, authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -22,33 +22,33 @@ router.post('/register', async (req, res) => {
     }
 
     if (password.length < 8) {
-      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 8 caractères' });
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 8 caracteres' });
     }
 
     if (name.trim().length < 2) {
-      return res.status(400).json({ error: 'Le nom doit contenir au moins 2 caractères' });
+      return res.status(400).json({ error: 'Le nom doit contenir au moins 2 caracteres' });
     }
 
-    // Anti-énumération : même message si l'email existe déjà
-    const existingUser = User.findByEmail(email.toLowerCase());
+    // Anti-enumeration : meme message si l'email existe deja
+    const existingUser = await User.findByEmail(email.toLowerCase());
     if (existingUser) {
-      return res.status(400).json({ error: 'Impossible de créer ce compte. Vérifiez les informations saisies.' });
+      return res.status(400).json({ error: 'Impossible de creer ce compte. Verifiez les informations saisies.' });
     }
 
-    // Créer l'utilisateur
-    const userId = User.create({ email: email.toLowerCase(), password, name: name.trim() });
+    // Creer l'utilisateur
+    const userId = await User.create({ email: email.toLowerCase(), password, name: name.trim() });
 
-    // Mettre à jour last_activity à la création
-    User.updateActivity(userId);
+    // Mettre a jour last_activity a la creation
+    await User.updateActivity(userId);
 
-    // Générer un token
+    // Generer un token
     const token = generateToken(userId, email.toLowerCase());
 
-    // Récupérer l'utilisateur créé (sans le mot de passe)
-    const user = User.findById(userId);
+    // Recuperer l'utilisateur cree (sans le mot de passe)
+    const user = await User.findById(userId);
 
     res.status(201).json({
-      message: 'Inscription réussie',
+      message: 'Inscription reussie',
       token,
       user
     });
@@ -68,28 +68,28 @@ router.post('/login', async (req, res) => {
     }
 
     // Trouver l'utilisateur
-    const user = User.findByEmail(email.toLowerCase());
+    const user = await User.findByEmail(email.toLowerCase());
     if (!user) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 
-    // Vérifier le mot de passe
+    // Verifier le mot de passe
     const isValidPassword = User.verifyPassword(password, user.password_hash);
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 
-    // Mettre à jour last_activity à la connexion
-    User.updateActivity(user.id);
+    // Mettre a jour last_activity a la connexion
+    await User.updateActivity(user.id);
 
-    // Générer un token
+    // Generer un token
     const token = generateToken(user.id, user.email);
 
     // Retourner l'utilisateur sans le mot de passe
     const { password_hash, ...userWithoutPassword } = user;
 
     res.json({
-      message: 'Connexion réussie',
+      message: 'Connexion reussie',
       token,
       user: userWithoutPassword
     });
@@ -98,12 +98,12 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// GET /api/auth/me - Récupérer les informations de l'utilisateur connecté
-router.get('/me', authenticateToken, (req, res) => {
+// GET /api/auth/me - Recuperer les informations de l'utilisateur connecte
+router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const user = User.findById(req.user.userId);
+    const user = await User.findById(req.user.userId);
     if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      return res.status(404).json({ error: 'Utilisateur non trouve' });
     }
 
     res.json({ user });
@@ -112,56 +112,61 @@ router.get('/me', authenticateToken, (req, res) => {
   }
 });
 
-// POST /api/auth/logout - Déconnexion (côté client, suppression du token)
+// POST /api/auth/logout - Deconnexion (cote client, suppression du token)
 router.post('/logout', authenticateToken, (req, res) => {
-  res.json({ message: 'Déconnexion réussie' });
+  res.json({ message: 'Deconnexion reussie' });
 });
 
-// DELETE /api/auth/account - Droit à l'oubli (RGPD Art. 17)
-router.delete('/account', authenticateToken, (req, res) => {
+// DELETE /api/auth/account - Droit a l'oubli (RGPD Art. 17)
+router.delete('/account', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // Vérifier que l'utilisateur existe
-    const user = User.findById(userId);
+    // Verifier que l'utilisateur existe
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      return res.status(404).json({ error: 'Utilisateur non trouve' });
     }
 
-    // Empêcher la suppression du compte admin
+    // Empecher la suppression du compte admin
     if (user.is_admin) {
-      return res.status(403).json({ error: 'Le compte administrateur ne peut pas être supprimé via cette route.' });
+      return res.status(403).json({ error: 'Le compte administrateur ne peut pas etre supprime via cette route.' });
     }
 
-    // Supprimer toutes les données liées (CASCADE sur agents → conversations + embeddings)
-    User.delete(userId);
+    // Supprimer toutes les donnees liees
+    await User.delete(userId);
 
-    res.json({ message: 'Compte et données associées supprimés définitivement.' });
+    res.json({ message: 'Compte et donnees associees supprimes definitivement.' });
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur lors de la suppression du compte' });
   }
 });
 
-// GET /api/auth/export - Export des données personnelles (RGPD Art. 20)
-router.get('/export', authenticateToken, (req, res) => {
+// GET /api/auth/export - Export des donnees personnelles (RGPD Art. 20)
+router.get('/export', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    const user = User.findById(userId);
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      return res.status(404).json({ error: 'Utilisateur non trouve' });
     }
 
-    // Récupérer tous les agents de l'utilisateur
-    const agents = db.prepare('SELECT id, email, prompt, documentation, widget_color, created_at FROM agents WHERE user_id = ?').all(userId);
+    // Recuperer tous les agents de l'utilisateur
+    const agentsResult = await pool.query(
+      'SELECT id, email, prompt, documentation, widget_color, created_at FROM agents WHERE user_id = $1',
+      [userId]
+    );
 
-    // Récupérer les conversations pour chaque agent
-    const agentsWithConversations = agents.map(agent => {
-      const conversations = db.prepare(
-        'SELECT session_id, user_message, bot_response, created_at FROM conversations WHERE agent_id = ? ORDER BY created_at ASC'
-      ).all(agent.id);
-      return { ...agent, conversations };
-    });
+    // Recuperer les conversations pour chaque agent
+    const agentsWithConversations = [];
+    for (const agent of agentsResult.rows) {
+      const convsResult = await pool.query(
+        'SELECT session_id, user_message, bot_response, created_at FROM conversations WHERE agent_id = $1 ORDER BY created_at ASC',
+        [agent.id]
+      );
+      agentsWithConversations.push({ ...agent, conversations: convsResult.rows });
+    }
 
     const exportData = {
       exported_at: new Date().toISOString(),
@@ -178,7 +183,7 @@ router.get('/export', authenticateToken, (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.json(exportData);
   } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur lors de l\'export des données' });
+    res.status(500).json({ error: 'Erreur serveur lors de l\'export des donnees' });
   }
 });
 

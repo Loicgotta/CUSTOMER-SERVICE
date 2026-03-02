@@ -1,66 +1,71 @@
-import db from '../database/db.js';
+import pool from '../database/db.js';
 
 class Conversation {
-  static create({ agentId, sessionId, userMessage, botResponse }) {
-    const stmt = db.prepare(`
-      INSERT INTO conversations (agent_id, session_id, user_message, bot_response)
-      VALUES (?, ?, ?, ?)
-    `);
-    const result = stmt.run(agentId, sessionId, userMessage, botResponse);
-    return result.lastInsertRowid;
+  static async create({ agentId, sessionId, userMessage, botResponse }) {
+    const result = await pool.query(
+      `INSERT INTO conversations (agent_id, session_id, user_message, bot_response)
+       VALUES ($1, $2, $3, $4) RETURNING id`,
+      [agentId, sessionId, userMessage, botResponse]
+    );
+    return result.rows[0].id;
   }
 
-  static findByAgentId(agentId, limit = null) {
+  static async findByAgentId(agentId, limit = null) {
     if (limit) {
-      const stmt = db.prepare(`
-        SELECT * FROM conversations
-        WHERE agent_id = ?
-        ORDER BY created_at ASC
-        LIMIT ?
-      `);
-      return stmt.all(agentId, limit);
+      const result = await pool.query(
+        `SELECT * FROM conversations
+         WHERE agent_id = $1
+         ORDER BY created_at ASC
+         LIMIT $2`,
+        [agentId, limit]
+      );
+      return result.rows;
     }
-    const stmt = db.prepare(`
-      SELECT * FROM conversations
-      WHERE agent_id = ?
-      ORDER BY created_at ASC
-    `);
-    return stmt.all(agentId);
+    const result = await pool.query(
+      `SELECT * FROM conversations
+       WHERE agent_id = $1
+       ORDER BY created_at ASC`,
+      [agentId]
+    );
+    return result.rows;
   }
 
-  static findByAgentIdAndDateRange(agentId, startDate, endDate) {
-    const stmt = db.prepare(`
-      SELECT * FROM conversations
-      WHERE agent_id = ?
-      AND DATE(created_at) >= DATE(?)
-      AND DATE(created_at) <= DATE(?)
-      ORDER BY created_at ASC
-    `);
-    return stmt.all(agentId, startDate, endDate);
+  static async findByAgentIdAndDateRange(agentId, startDate, endDate) {
+    const result = await pool.query(
+      `SELECT * FROM conversations
+       WHERE agent_id = $1
+       AND DATE(created_at) >= DATE($2)
+       AND DATE(created_at) <= DATE($3)
+       ORDER BY created_at ASC`,
+      [agentId, startDate, endDate]
+    );
+    return result.rows;
   }
 
-  static findBySessionId(sessionId) {
-    const stmt = db.prepare(`
-      SELECT * FROM conversations
-      WHERE session_id = ?
-      ORDER BY created_at ASC
-    `);
-    return stmt.all(sessionId);
+  static async findBySessionId(sessionId) {
+    const result = await pool.query(
+      `SELECT * FROM conversations
+       WHERE session_id = $1
+       ORDER BY created_at ASC`,
+      [sessionId]
+    );
+    return result.rows;
   }
 
-  static findTodayConversations(agentId) {
-    const stmt = db.prepare(`
-      SELECT * FROM conversations
-      WHERE agent_id = ?
-      AND DATE(created_at) = DATE('now')
-      ORDER BY created_at ASC
-    `);
-    return stmt.all(agentId);
+  static async findTodayConversations(agentId) {
+    const result = await pool.query(
+      `SELECT * FROM conversations
+       WHERE agent_id = $1
+       AND DATE(created_at) = CURRENT_DATE
+       ORDER BY created_at ASC`,
+      [agentId]
+    );
+    return result.rows;
   }
 
-  static deleteByAgentId(agentId) {
-    const stmt = db.prepare('DELETE FROM conversations WHERE agent_id = ?');
-    return stmt.run(agentId);
+  static async deleteByAgentId(agentId) {
+    const result = await pool.query('DELETE FROM conversations WHERE agent_id = $1', [agentId]);
+    return result;
   }
 }
 

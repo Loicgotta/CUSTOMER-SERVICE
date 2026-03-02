@@ -13,8 +13,8 @@ services:
         value: production
       - key: PORT
         value: 3001
-      - key: DATABASE_PATH
-        value: /opt/render/project/src/backend/data/chatbot.db
+      - key: DATABASE_URL
+        value: postgresql://chatbot_user:sdSFzkDxnzPSsnEpafEK0wVYk0Wt5Nra@dpg-d6eh5kggjchc73fdf5f0-a.oregon-postgres.render.com/chatbot_db_4k7q
       - key: OPENAI_API_KEY
         sync: false  # À configurer manuellement dans le dashboard Render
       - key: JWT_SECRET

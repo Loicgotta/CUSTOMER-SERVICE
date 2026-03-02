@@ -10,7 +10,7 @@ const openai = new OpenAI({
 });
 
 class RAGService {
-  // Découper la documentation en chunks avec overlap
+  // Decouper la documentation en chunks avec overlap
   static chunkText(text, chunkSize = 300, overlap = 75) {
     const words = text.split(/\s+/);
     const chunks = [];
@@ -28,7 +28,7 @@ class RAGService {
     return chunks;
   }
 
-  // Créer un embedding pour un texte
+  // Creer un embedding pour un texte
   static async createEmbedding(text) {
     try {
       const response = await openai.embeddings.create({
@@ -37,7 +37,7 @@ class RAGService {
       });
       return response.data[0].embedding;
     } catch (error) {
-      Logger.error('Erreur lors de la création de l\'embedding', error);
+      Logger.error('Erreur lors de la creation de l\'embedding', error);
       throw error;
     }
   }
@@ -51,21 +51,21 @@ class RAGService {
         : [{ name: 'Documentation', content: documents }];
 
       // Supprimer les anciens embeddings
-      Embedding.deleteByAgentId(agentId);
+      await Embedding.deleteByAgentId(agentId);
 
       let totalChunks = 0;
 
-      // Indexer chaque document séparément
+      // Indexer chaque document separement
       for (const doc of docsArray) {
         if (!doc.content || doc.content.trim().length === 0) continue;
 
-        // Découper le document
+        // Decouper le document
         const chunks = this.chunkText(doc.content);
 
-        // Créer des embeddings pour chaque chunk avec le nom du document
+        // Creer des embeddings pour chaque chunk avec le nom du document
         for (const chunk of chunks) {
           const embedding = await this.createEmbedding(chunk);
-          Embedding.create({
+          await Embedding.create({
             agentId,
             chunkText: chunk,
             embedding,
@@ -74,10 +74,10 @@ class RAGService {
         }
 
         totalChunks += chunks.length;
-        Logger.info(`Document "${doc.name}" indexé: ${chunks.length} chunks`);
+        Logger.info(`Document "${doc.name}" indexe: ${chunks.length} chunks`);
       }
 
-      Logger.success(`Documentation indexée pour l'agent ${agentId}: ${totalChunks} chunks total (${docsArray.length} documents)`);
+      Logger.success(`Documentation indexee pour l'agent ${agentId}: ${totalChunks} chunks total (${docsArray.length} documents)`);
       return totalChunks;
     } catch (error) {
       Logger.error('Erreur lors de l\'indexation', error);
@@ -85,7 +85,7 @@ class RAGService {
     }
   }
 
-  // Calculer la similarité cosinus entre deux vecteurs
+  // Calculer la similarite cosinus entre deux vecteurs
   static cosineSimilarity(vecA, vecB) {
     const dotProduct = vecA.reduce((sum, a, i) => sum + a * vecB[i], 0);
     const magnitudeA = Math.sqrt(vecA.reduce((sum, a) => sum + a * a, 0));
@@ -96,29 +96,29 @@ class RAGService {
   // Rechercher les chunks les plus pertinents (avec filtre optionnel par document)
   static async searchRelevantChunks(agentId, query, topK = 3, documentName = null) {
     try {
-      // Créer l'embedding de la requête
+      // Creer l'embedding de la requete
       const queryEmbedding = await this.createEmbedding(query);
 
-      // Récupérer les embeddings de l'agent (filtrés par document si spécifié)
-      const embeddings = Embedding.findByAgentId(agentId, documentName);
+      // Recuperer les embeddings de l'agent (filtres par document si specifie)
+      const embeddings = await Embedding.findByAgentId(agentId, documentName);
 
       if (embeddings.length === 0) {
         return [];
       }
 
-      // Calculer les similarités
+      // Calculer les similarites
       const similarities = embeddings.map(emb => ({
         chunkText: emb.chunk_text,
         documentName: emb.document_name,
         similarity: this.cosineSimilarity(queryEmbedding, emb.embedding)
       }));
 
-      // Trier par similarité et prendre les top K
+      // Trier par similarite et prendre les top K
       similarities.sort((a, b) => b.similarity - a.similarity);
       const results = similarities.slice(0, topK);
 
       if (documentName) {
-        Logger.info(`Recherche RAG filtrée par document "${documentName}": ${results.length} chunks trouvés`);
+        Logger.info(`Recherche RAG filtree par document "${documentName}": ${results.length} chunks trouves`);
       }
 
       return results.map(s => ({ text: s.chunkText, source: s.documentName }));

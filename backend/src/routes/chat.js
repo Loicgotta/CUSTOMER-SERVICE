@@ -2,26 +2,26 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import ChatService from '../services/chatService.js';
 import Conversation from '../models/Conversation.js';
-import db from '../database/db.js';
+import pool from '../database/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Rate limiting : 20 messages par minute par IP (anti-spam / anti-coût OpenAI)
+// Rate limiting : 20 messages par minute par IP (anti-spam / anti-cout OpenAI)
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
-  message: { error: 'Trop de messages envoyés. Attendez une minute avant de réessayer.' },
+  message: { error: 'Trop de messages envoyes. Attendez une minute avant de reessayer.' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
-// Rate limiting strict pour l'historique (anti énumération de sessionIds)
+// Rate limiting strict pour l'historique (anti enumeration de sessionIds)
 const historyLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 10, // Maximum 10 requêtes par minute
-  message: { error: 'Trop de requêtes. Veuillez patienter.' },
+  max: 10, // Maximum 10 requetes par minute
+  message: { error: 'Trop de requetes. Veuillez patienter.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -39,16 +39,16 @@ router.post('/message', chatLimiter, async (req, res) => {
 
     const trimmed = String(message).trim();
     if (trimmed.length === 0) {
-      return res.status(400).json({ error: 'Le message ne peut pas être vide' });
+      return res.status(400).json({ error: 'Le message ne peut pas etre vide' });
     }
     if (trimmed.length > MAX_MESSAGE_LENGTH) {
-      return res.status(400).json({ error: `Message trop long (max ${MAX_MESSAGE_LENGTH} caractères)` });
+      return res.status(400).json({ error: `Message trop long (max ${MAX_MESSAGE_LENGTH} caracteres)` });
     }
 
-    // Générer un sessionId si non fourni
+    // Generer un sessionId si non fourni
     const actualSessionId = sessionId || uuidv4();
 
-    // Traiter le message (version nettoyée)
+    // Traiter le message (version nettoyee)
     const response = await ChatService.processMessage(agentId, actualSessionId, trimmed);
 
     res.json({
@@ -56,13 +56,13 @@ router.post('/message', chatLimiter, async (req, res) => {
       response
     });
   } catch (error) {
-    // erreur interne, pas de stack exposée au client
+    // erreur interne, pas de stack exposee au client
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
-// Récupérer l'historique d'une session (rate limited pour sécurité)
-router.get('/history/:sessionId', historyLimiter, (req, res) => {
+// Recuperer l'historique d'une session (rate limited pour securite)
+router.get('/history/:sessionId', historyLimiter, async (req, res) => {
   try {
     const { sessionId } = req.params;
 
@@ -72,9 +72,9 @@ router.get('/history/:sessionId', historyLimiter, (req, res) => {
       return res.status(400).json({ error: 'Format de session invalide' });
     }
 
-    const conversations = Conversation.findBySessionId(sessionId);
+    const conversations = await Conversation.findBySessionId(sessionId);
 
-    // Ne pas révéler si la session existe ou non (anti-énumération)
+    // Ne pas reveler si la session existe ou non (anti-enumeration)
     res.json(conversations || []);
   } catch (error) {
     // erreur interne
@@ -82,21 +82,22 @@ router.get('/history/:sessionId', historyLimiter, (req, res) => {
   }
 });
 
-// Récupérer toutes les conversations d'un agent (protégé : propriétaire uniquement)
-router.get('/agent/:agentId', authenticateToken, (req, res) => {
+// Recuperer toutes les conversations d'un agent (protege : proprietaire uniquement)
+router.get('/agent/:agentId', authenticateToken, async (req, res) => {
   try {
     const agentId = req.params.agentId;
 
-    // Vérifier que l'agent appartient à l'utilisateur connecté
-    const agent = db.prepare('SELECT user_id FROM agents WHERE id = ?').get(agentId);
+    // Verifier que l'agent appartient a l'utilisateur connecte
+    const agentResult = await pool.query('SELECT user_id FROM agents WHERE id = $1', [agentId]);
+    const agent = agentResult.rows[0];
     if (!agent) {
       return res.status(404).json({ error: 'Agent introuvable' });
     }
     if (agent.user_id !== req.user.userId) {
-      return res.status(403).json({ error: 'Accès refusé' });
+      return res.status(403).json({ error: 'Acces refuse' });
     }
 
-    const conversations = Conversation.findByAgentId(agentId);
+    const conversations = await Conversation.findByAgentId(agentId);
     res.json(conversations);
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });

@@ -3,28 +3,28 @@ import User from '../models/User.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// Middleware d'authentification avec vérification d'inactivité
-export const authenticateToken = (req, res, next) => {
-  // Récupérer le token depuis le header Authorization
+// Middleware d'authentification avec verification d'inactivite
+export const authenticateToken = async (req, res, next) => {
+  // Recuperer le token depuis le header Authorization
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Format: "Bearer TOKEN"
 
   if (!token) {
-    return res.status(401).json({ error: 'Accès non autorisé. Token manquant.' });
+    return res.status(401).json({ error: 'Acces non autorise. Token manquant.' });
   }
 
   try {
-    // Vérifier et décoder le token
+    // Verifier et decoder le token
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    // Vérifier que l'utilisateur existe toujours
-    const user = User.findById(decoded.userId);
+    // Verifier que l'utilisateur existe toujours
+    const user = await User.findById(decoded.userId);
     if (!user) {
-      return res.status(401).json({ error: 'Utilisateur non trouvé.' });
+      return res.status(401).json({ error: 'Utilisateur non trouve.' });
     }
 
-    // Vérifier l'inactivité (7 jours = 604800000 ms)
-    const lastActivity = User.getLastActivity(decoded.userId);
+    // Verifier l'inactivite (7 jours = 604800000 ms)
+    const lastActivity = await User.getLastActivity(decoded.userId);
     if (lastActivity) {
       const lastActivityDate = new Date(lastActivity);
       const now = new Date();
@@ -32,16 +32,16 @@ export const authenticateToken = (req, res, next) => {
 
       if (inactiveDays > 7) {
         return res.status(401).json({
-          error: 'Session expirée pour inactivité. Veuillez vous reconnecter.',
+          error: 'Session expiree pour inactivite. Veuillez vous reconnecter.',
           reason: 'inactivity'
         });
       }
     }
 
-    // Mettre à jour la dernière activité
-    User.updateActivity(decoded.userId);
+    // Mettre a jour la derniere activite
+    await User.updateActivity(decoded.userId);
 
-    // Ajouter les infos utilisateur à la requête
+    // Ajouter les infos utilisateur a la requete
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
@@ -51,40 +51,40 @@ export const authenticateToken = (req, res, next) => {
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Token expiré. Veuillez vous reconnecter.' });
+      return res.status(401).json({ error: 'Token expire. Veuillez vous reconnecter.' });
     }
     return res.status(403).json({ error: 'Token invalide.' });
   }
 };
 
-// Middleware pour vérifier les privilèges admin
-export const requireAdmin = (req, res, next) => {
+// Middleware pour verifier les privileges admin
+export const requireAdmin = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const user = User.findById(userId);
+    const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(401).json({ error: 'Utilisateur non trouvé.' });
+      return res.status(401).json({ error: 'Utilisateur non trouve.' });
     }
 
     if (!user.is_admin) {
-      return res.status(403).json({ error: 'Accès refusé. Privilèges administrateur requis.' });
+      return res.status(403).json({ error: 'Acces refuse. Privileges administrateur requis.' });
     }
 
-    // Ajouter le flag admin à req.user
+    // Ajouter le flag admin a req.user
     req.user.isAdmin = true;
     next();
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la vérification des privilèges admin.' });
+    return res.status(500).json({ error: 'Erreur lors de la verification des privileges admin.' });
   }
 };
 
-// Fonction pour générer un token
+// Fonction pour generer un token
 export const generateToken = (userId, email) => {
   return jwt.sign(
     { userId, email },
     JWT_SECRET,
-    { expiresIn: '7d' } // Le token expire après 7 jours
+    { expiresIn: '7d' } // Le token expire apres 7 jours
   );
 };
 
