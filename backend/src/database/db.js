@@ -8,20 +8,27 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Chemin de la base de données :
-// - En production (Render) : DATABASE_PATH pointe vers /data/chatbot.db (Persistent Disk)
-// - En local : utilise le dossier backend/data/chatbot.db
+// - Si DATABASE_PATH est défini : utilise ce chemin (Persistent Disk ou chemin custom)
+// - Sinon : utilise le dossier backend/data/chatbot.db (local et Render sans disk)
+const dataDir = path.join(__dirname, '../../data');
 let dbPath;
+
 if (process.env.DATABASE_PATH) {
-  // Production : chemin explicite vers le Persistent Disk
   dbPath = process.env.DATABASE_PATH;
   const dbDir = path.dirname(dbPath);
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-    console.log('Persistent data directory created:', dbDir);
+  try {
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+      console.log('Persistent data directory created:', dbDir);
+    }
+  } catch (err) {
+    console.warn('⚠️  Impossible de créer le dossier', dbDir, ':', err.message);
+    console.warn('   Utilisation du dossier local backend/data/ à la place.');
+    dbPath = null;
   }
-} else {
-  // Local : dossier data dans le projet
-  const dataDir = path.join(__dirname, '../../data');
+}
+
+if (!dbPath) {
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
     console.log('Data directory created');
