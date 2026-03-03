@@ -164,6 +164,7 @@
         border-radius: 12px;
         line-height: 1.5;
         font-size: 0.9rem;
+        white-space: pre-wrap;
       }
 
       .chatbot-message.bot .chatbot-message-content {
