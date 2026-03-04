@@ -380,7 +380,7 @@
 
       // Effet typewriter
       let index = 0;
-      const speed = 20; // millisecondes par caractère
+      const speed = 5; // millisecondes par caractère
 
       function typeNextChar() {
         if (index < content.length) {

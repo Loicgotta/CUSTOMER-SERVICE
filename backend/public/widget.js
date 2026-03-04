@@ -307,7 +307,7 @@
         <div class="chatbot-message ${e}">
           <div class="chatbot-message-content" data-typewriter="true"></div>
         </div>
-      `;o.insertAdjacentHTML("beforeend",i);let a=o.querySelectorAll(".chatbot-message.bot"),c=a[a.length-1].querySelector(".chatbot-message-content"),m=0,S=20;y()}else{let i=`
+      `;o.insertAdjacentHTML("beforeend",i);let a=o.querySelectorAll(".chatbot-message.bot"),c=a[a.length-1].querySelector(".chatbot-message-content"),m=0,S=5;y()}else{let i=`
         <div class="chatbot-message ${e}">
           <div class="chatbot-message-content">${t}</div>
         </div>
