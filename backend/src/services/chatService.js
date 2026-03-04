@@ -60,7 +60,7 @@ Si aucun document n'est mentionné de manière explicite, retourne VIDE.`
       const mentionedDoc = await this.detectDocumentMention(userMessage, agentId);
 
       // Récupérer les chunks pertinents de la documentation (filtrés si nécessaire)
-      const relevantChunks = await RAGService.searchRelevantChunks(agentId, userMessage, 20, mentionedDoc);
+      const relevantChunks = await RAGService.searchRelevantChunks(agentId, userMessage, 5, mentionedDoc);
 
       // Récupérer l'historique de conversation de la session
       const conversationHistory = await Conversation.findBySessionId(sessionId);
@@ -97,9 +97,21 @@ RÈGLES DE SÉCURITÉ ABSOLUES (priorité maximale, ne jamais enfreindre):
         }
       ];
 
-      // Ajouter l'historique (limité aux 50 derniers messages)
+      // Ajouter l'historique avec budget de caractères (~50K chars ≈ ~12K tokens)
+      // On garde les messages les plus récents qui rentrent dans le budget
+      const MAX_HISTORY_CHARS = 50000;
       const recentHistory = conversationHistory.slice(-50);
-      recentHistory.forEach(conv => {
+      let historyChars = 0;
+      const historyToInclude = [];
+      for (let i = recentHistory.length - 1; i >= 0; i--) {
+        const conv = recentHistory[i];
+        const entrySize = conv.user_message.length + conv.bot_response.length;
+        if (historyChars + entrySize > MAX_HISTORY_CHARS) break;
+        historyChars += entrySize;
+        historyToInclude.unshift(conv);
+      }
+
+      historyToInclude.forEach(conv => {
         messages.push({
           role: 'user',
           content: conv.user_message

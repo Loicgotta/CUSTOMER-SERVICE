@@ -16,12 +16,13 @@ class ReportService {
     try {
       Logger.info(`Génération du rapport pour l'agent ${agentId} | Dates: ${startDate || 'toutes'} → ${endDate || 'toutes'}`);
 
-      // Récupérer les conversations selon le filtre de dates
+      // Récupérer les conversations selon le filtre de dates (max 500 pour éviter OOM)
+      const MAX_CONVERSATIONS = 500;
       let conversations;
       if (startDate && endDate) {
         conversations = await Conversation.findByAgentIdAndDateRange(agentId, startDate, endDate);
       } else {
-        conversations = await Conversation.findByAgentId(agentId);
+        conversations = await Conversation.findByAgentId(agentId, MAX_CONVERSATIONS);
       }
 
       if (conversations.length === 0) {
@@ -32,14 +33,28 @@ class ReportService {
       Logger.info(`${conversations.length} conversations trouvées pour l'agent ${agentId}`);
 
       // Construire le texte des conversations avec les dates
+      // Limiter la taille totale pour ne pas dépasser le context window GPT (~100K tokens ≈ ~400K chars)
+      const MAX_TEXT_LENGTH = 300000;
       let conversationsText = '';
-      conversations.forEach((conv, i) => {
+      let truncatedCount = 0;
+      for (let i = 0; i < conversations.length; i++) {
+        const conv = conversations[i];
         const date = new Date(conv.created_at).toLocaleString('fr-FR', {
           day: '2-digit', month: '2-digit', year: 'numeric',
           hour: '2-digit', minute: '2-digit'
         });
-        conversationsText += `--- Conversation #${i + 1} | ${date} | Session: ${conv.session_id} ---\nClient: ${conv.user_message}\nAssistant: ${conv.bot_response}\n\n`;
-      });
+        const entry = `--- Conversation #${i + 1} | ${date} | Session: ${conv.session_id} ---\nClient: ${conv.user_message}\nAssistant: ${conv.bot_response}\n\n`;
+
+        if (conversationsText.length + entry.length > MAX_TEXT_LENGTH) {
+          truncatedCount = conversations.length - i;
+          break;
+        }
+        conversationsText += entry;
+      }
+
+      if (truncatedCount > 0) {
+        Logger.warning(`Rapport tronqué : ${truncatedCount} conversations omises pour respecter la limite de taille`);
+      }
 
       // Déterminer la période pour le rapport
       const firstDate = new Date(conversations[0].created_at).toLocaleDateString('fr-FR');

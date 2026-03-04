@@ -2,6 +2,9 @@ import express from 'express';
 import multer from 'multer';
 import mammoth from 'mammoth';
 import ExcelJS from 'exceljs';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import { createRequire } from 'module';
 import Logger from '../utils/logger.js';
 
@@ -11,9 +14,14 @@ const pdfParse = require('pdf-parse');
 
 const router = express.Router();
 
-// Limite : 10 Mo par fichier
+// Limite : 10 Mo par fichier, stockage sur disque (pas en RAM)
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage: multer.diskStorage({
+    destination: os.tmpdir(),
+    filename: (req, file, cb) => {
+      cb(null, `upload-${Date.now()}-${file.originalname}`);
+    }
+  }),
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 
@@ -26,7 +34,8 @@ router.post('/extract', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Aucun fichier envoyé' });
     }
 
-    const { buffer, originalname, size } = req.file;
+    const { path: filePath, originalname, size } = req.file;
+    const buffer = fs.readFileSync(filePath);
     Logger.info(`📄 [DOCS] Fichier reçu: ${originalname} (${(size / 1024).toFixed(2)} KB)`);
 
     const ext = originalname.split('.').pop().toLowerCase();
@@ -114,6 +123,11 @@ router.post('/extract', upload.single('file'), async (req, res) => {
   } catch (error) {
     Logger.error('📄 [DOCS] Erreur extraction texte', error);
     res.status(500).json({ error: "Erreur lors de l'extraction du texte", details: error.message });
+  } finally {
+    // Nettoyer le fichier temporaire du disque
+    if (req.file && req.file.path) {
+      fs.unlink(req.file.path, () => {});
+    }
   }
 });
 

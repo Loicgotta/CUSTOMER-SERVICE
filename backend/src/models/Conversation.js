@@ -31,14 +31,15 @@ class Conversation {
     return result.rows;
   }
 
-  static async findByAgentIdAndDateRange(agentId, startDate, endDate) {
+  static async findByAgentIdAndDateRange(agentId, startDate, endDate, limit = 500) {
     const result = await pool.query(
       `SELECT * FROM conversations
        WHERE agent_id = $1
        AND DATE(created_at) >= DATE($2)
        AND DATE(created_at) <= DATE($3)
-       ORDER BY created_at ASC`,
-      [agentId, startDate, endDate]
+       ORDER BY created_at ASC
+       LIMIT $4`,
+      [agentId, startDate, endDate, limit]
     );
     return result.rows;
   }

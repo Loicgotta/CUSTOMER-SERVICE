@@ -11,19 +11,21 @@ class Embedding {
     return result.rows[0].id;
   }
 
-  static async findByAgentId(agentId, documentName = null) {
+  static async findByAgentId(agentId, documentName = null, limit = 500) {
     let result;
     if (documentName) {
       result = await pool.query(
-        `SELECT * FROM embeddings
-         WHERE agent_id = $1 AND document_name = $2`,
-        [agentId, documentName]
+        `SELECT id, chunk_text, embedding, document_name FROM embeddings
+         WHERE agent_id = $1 AND document_name = $2
+         LIMIT $3`,
+        [agentId, documentName, limit]
       );
     } else {
       result = await pool.query(
-        `SELECT * FROM embeddings
-         WHERE agent_id = $1`,
-        [agentId]
+        `SELECT id, chunk_text, embedding, document_name FROM embeddings
+         WHERE agent_id = $1
+         LIMIT $2`,
+        [agentId, limit]
       );
     }
     return result.rows.map(row => ({

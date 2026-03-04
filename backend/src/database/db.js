@@ -7,7 +7,10 @@ const { Pool } = pg;
 // Connexion PostgreSQL via DATABASE_URL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: parseInt(process.env.PG_POOL_MAX || '5', 10),           // max connexions par instance (défaut 5, safe pour scaling)
+  idleTimeoutMillis: 30000,         // fermer les connexions idle après 30s
+  connectionTimeoutMillis: 5000     // timeout si pas de connexion dispo après 5s
 });
 
 // Fonction d'initialisation asynchrone de la base de données

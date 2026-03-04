@@ -15,7 +15,7 @@ import promptRouter from './routes/prompt.js';
 import ReportService from './services/reportService.js';
 import Logger from './utils/logger.js';
 import { authenticateToken, requireAdmin } from './middleware/auth.js';
-import { initializeDatabase } from './database/db.js';
+import { initializeDatabase, pool } from './database/db.js';
 
 dotenv.config();
 
@@ -89,8 +89,8 @@ const globalLimiter = rateLimit({
 
 app.use(globalLimiter);
 
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+app.use(bodyParser.json({ limit: '2mb' }));
+app.use(bodyParser.urlencoded({ limit: '2mb', extended: true }));
 
 // Ajouter les headers CORS sur widget.js
 app.use((req, res, next) => {
@@ -142,9 +142,9 @@ app.post('/api/reports/send/:agentId', authenticateToken, async (req, res) => {
 });
 
 // Route pour récupérer les logs (admin uniquement)
-app.get('/api/logs', authenticateToken, requireAdmin, (req, res) => {
+app.get('/api/logs', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const logs = Logger.getLogs();
+    const logs = await Logger.getLogs();
     res.json({
       count: logs.length,
       logs: logs
@@ -163,10 +163,12 @@ app.get('*', (req, res) => {
 });
 
 // Initialiser la base de données puis démarrer le serveur
+let server;
 async function startServer() {
   try {
     await initializeDatabase();
-    app.listen(PORT, () => {
+    await Logger.initTable();
+    server = app.listen(PORT, () => {
       Logger.success(`Serveur démarré sur le port ${PORT}`);
       Logger.info(`📊 Dashboard: http://localhost:${PORT}`);
       Logger.info(`📧 Rapports disponibles via le bouton "Envoyer Rapport" dans l'interface`);
@@ -176,6 +178,44 @@ async function startServer() {
     process.exit(1);
   }
 }
+
+// Graceful shutdown : fermer proprement les connexions pour éviter les requêtes perdues
+function gracefulShutdown(signal) {
+  console.log(`\n${signal} reçu. Arrêt propre en cours...`);
+  if (server) {
+    server.close(() => {
+      console.log('Serveur HTTP fermé.');
+      pool.end().then(() => {
+        console.log('Pool PostgreSQL fermé.');
+        process.exit(0);
+      }).catch(() => {
+        process.exit(1);
+      });
+    });
+    // Forcer l'arrêt après 10s si le serveur ne se ferme pas
+    setTimeout(() => {
+      console.error('Arrêt forcé après timeout.');
+      process.exit(1);
+    }, 10000);
+  } else {
+    process.exit(0);
+  }
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Capturer les erreurs non gérées pour éviter un crash silencieux
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+  Logger.error('Unhandled Promise Rejection', reason instanceof Error ? reason : new Error(String(reason)));
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  Logger.error('Uncaught Exception', error);
+  gracefulShutdown('uncaughtException');
+});
 
 startServer();
 
