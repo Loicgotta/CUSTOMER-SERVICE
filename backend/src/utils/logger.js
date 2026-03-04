@@ -1,62 +1,18 @@
-// Système de logging centralisé avec persistance DB + fallback mémoire
-
-import pool from '../database/db.js';
+// Système de logging centralisé avec stack traces complètes
 
 class Logger {
-  // Buffer mémoire (fallback si DB pas encore prête)
+  // Stockage des logs en mémoire (limité aux 100 derniers)
   static logs = [];
-  static MAX_MEMORY_LOGS = 100;
-  static dbReady = false;
-
-  static async initTable() {
-    try {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS app_logs (
-          id SERIAL PRIMARY KEY,
-          timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-          level TEXT NOT NULL,
-          message TEXT NOT NULL,
-          error_details JSONB,
-          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-      this.dbReady = true;
-    } catch (e) {
-      console.error('Logger: impossible de créer la table app_logs', e.message);
-    }
-  }
+  static MAX_LOGS = 100;
 
   static addToStorage(logEntry) {
-    // Toujours garder en mémoire (buffer rapide)
-    this.logs.unshift(logEntry);
-    if (this.logs.length > this.MAX_MEMORY_LOGS) {
-      this.logs.pop();
-    }
-
-    // Persister en DB (fire-and-forget, ne bloque pas l'app)
-    if (this.dbReady) {
-      pool.query(
-        `INSERT INTO app_logs (timestamp, level, message, error_details) VALUES ($1, $2, $3, $4)`,
-        [logEntry.timestamp, logEntry.level, logEntry.message, logEntry.error || null]
-      ).catch(() => {
-        // Silencieux : on ne veut pas de boucle infinie si le logger échoue
-      });
+    this.logs.unshift(logEntry); // Ajouter au début
+    if (this.logs.length > this.MAX_LOGS) {
+      this.logs.pop(); // Supprimer le plus ancien
     }
   }
 
-  static async getLogs(limit = 200) {
-    // Essayer de lire depuis la DB
-    if (this.dbReady) {
-      try {
-        const result = await pool.query(
-          `SELECT timestamp, level, message, error_details as error FROM app_logs ORDER BY id DESC LIMIT $1`,
-          [limit]
-        );
-        return result.rows;
-      } catch (e) {
-        // Fallback mémoire
-      }
-    }
+  static getLogs() {
     return this.logs;
   }
 

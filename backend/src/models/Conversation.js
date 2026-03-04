@@ -13,11 +13,14 @@ class Conversation {
 
   static async findByAgentId(agentId, limit = null) {
     if (limit) {
+      // Sous-requête pour récupérer les N plus récentes, puis tri ASC
       const result = await pool.query(
-        `SELECT * FROM conversations
-         WHERE agent_id = $1
-         ORDER BY created_at ASC
-         LIMIT $2`,
+        `SELECT * FROM (
+           SELECT * FROM conversations
+           WHERE agent_id = $1
+           ORDER BY created_at DESC
+           LIMIT $2
+         ) sub ORDER BY created_at ASC`,
         [agentId, limit]
       );
       return result.rows;
@@ -33,12 +36,14 @@ class Conversation {
 
   static async findByAgentIdAndDateRange(agentId, startDate, endDate, limit = 500) {
     const result = await pool.query(
-      `SELECT * FROM conversations
-       WHERE agent_id = $1
-       AND DATE(created_at) >= DATE($2)
-       AND DATE(created_at) <= DATE($3)
-       ORDER BY created_at ASC
-       LIMIT $4`,
+      `SELECT * FROM (
+         SELECT * FROM conversations
+         WHERE agent_id = $1
+         AND DATE(created_at) >= DATE($2)
+         AND DATE(created_at) <= DATE($3)
+         ORDER BY created_at DESC
+         LIMIT $4
+       ) sub ORDER BY created_at ASC`,
       [agentId, startDate, endDate, limit]
     );
     return result.rows;

@@ -89,8 +89,8 @@ const globalLimiter = rateLimit({
 
 app.use(globalLimiter);
 
-app.use(bodyParser.json({ limit: '2mb' }));
-app.use(bodyParser.urlencoded({ limit: '2mb', extended: true }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 // Ajouter les headers CORS sur widget.js
 app.use((req, res, next) => {
@@ -142,9 +142,9 @@ app.post('/api/reports/send/:agentId', authenticateToken, async (req, res) => {
 });
 
 // Route pour récupérer les logs (admin uniquement)
-app.get('/api/logs', authenticateToken, requireAdmin, async (req, res) => {
+app.get('/api/logs', authenticateToken, requireAdmin, (req, res) => {
   try {
-    const logs = await Logger.getLogs();
+    const logs = Logger.getLogs();
     res.json({
       count: logs.length,
       logs: logs
@@ -167,7 +167,6 @@ let server;
 async function startServer() {
   try {
     await initializeDatabase();
-    await Logger.initTable();
     server = app.listen(PORT, () => {
       Logger.success(`Serveur démarré sur le port ${PORT}`);
       Logger.info(`📊 Dashboard: http://localhost:${PORT}`);
