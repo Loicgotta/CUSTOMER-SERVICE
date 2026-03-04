@@ -72,6 +72,15 @@ async function initializeDatabase() {
       );
     `);
 
+    // Resync des séquences SERIAL (corrige "duplicate key" après import/restauration de données)
+    await client.query(`
+      SELECT setval('conversations_id_seq', COALESCE((SELECT MAX(id) FROM conversations), 0) + 1, false);
+      SELECT setval('embeddings_id_seq', COALESCE((SELECT MAX(id) FROM embeddings), 0) + 1, false);
+      SELECT setval('users_id_seq', COALESCE((SELECT MAX(id) FROM users), 0) + 1, false);
+      SELECT setval('agents_id_seq', COALESCE((SELECT MAX(id) FROM agents), 0) + 1, false);
+      SELECT setval('daily_reports_id_seq', COALESCE((SELECT MAX(id) FROM daily_reports), 0) + 1, false);
+    `);
+
     // Créer le compte admin automatiquement au démarrage
     const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
     const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;

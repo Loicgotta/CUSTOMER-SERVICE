@@ -32,9 +32,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Configurer Express pour faire confiance au reverse proxy de Render
+// Configurer Express pour faire confiance au reverse proxy de Render (1 seul hop)
 // Nécessaire pour que le rate limiter identifie correctement les utilisateurs via X-Forwarded-For
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 
 // Headers de sécurité HTTP
 app.use(helmet({
