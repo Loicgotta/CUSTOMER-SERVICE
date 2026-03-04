@@ -79,7 +79,14 @@ Si aucun document n'est mentionne de maniere explicite, retourne VIDE.`
         context += `\nL'utilisateur a demande a consulter specifiquement le document "${mentionedDoc}".\n`;
       }
 
-      context += `\n\nInstructions de suivi:
+      context += `\n\nInstructions de mise en forme:
+- Structure tes reponses de maniere aeree et lisible
+- Utilise des sauts de ligne pour separer les idees ou les etapes differentes
+- Quand tu listes des elements, mets chaque element sur une nouvelle ligne
+- Evite les blocs de texte compacts, prefere des paragraphes courts separes par des lignes vides
+- N'utilise pas de markdown (pas de **, #, -, etc.), juste du texte simple avec des retours a la ligne
+
+Instructions de suivi:
 - Apres avoir aide un client et resolu son probleme, demande-lui: "Est-ce que je peux faire autre chose pour vous?"
 - Si le client repond que tout est resolu (oui, c'est tout, non merci, etc.), demande-lui: "Comment avez-vous trouve l'experience?" pour collecter son feedback.
 

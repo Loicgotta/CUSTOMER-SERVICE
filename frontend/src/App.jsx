@@ -401,7 +401,11 @@ function App() {
           <div className="chat-messages">
             {chatMessages.map((msg, i) => (
               <div key={i} className={`chat-msg chat-msg-${msg.role}${msg.isError ? ' chat-msg-error' : ''}`}>
-                <div className="chat-msg-bubble">{msg.content}</div>
+                <div className="chat-msg-bubble">
+                  {msg.content.split('\n').map((line, j, arr) => (
+                    <span key={j}>{line}{j < arr.length - 1 && <br />}</span>
+                  ))}
+                </div>
               </div>
             ))}
             {chatLoading && (

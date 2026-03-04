@@ -361,6 +361,13 @@
     document.body.insertAdjacentHTML('beforeend', widgetHTML);
   }
 
+  // Echapper le HTML pour eviter les injections XSS
+  function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   // Ajouter un message au chat
   function addMessage(content, type, useTypewriter = false) {
     const messagesContainer = document.getElementById('chatbot-messages');
@@ -379,13 +386,18 @@
       const lastMessage = messages[messages.length - 1];
       const contentElement = lastMessage.querySelector('.chatbot-message-content');
 
-      // Effet typewriter
+      // Effet typewriter avec support des sauts de ligne
       let index = 0;
-      const speed = 20; // millisecondes par caractère
+      const speed = 20;
 
       function typeNextChar() {
         if (index < content.length) {
-          contentElement.textContent += content.charAt(index);
+          var ch = content.charAt(index);
+          if (ch === '\n') {
+            contentElement.appendChild(document.createElement('br'));
+          } else {
+            contentElement.appendChild(document.createTextNode(ch));
+          }
           index++;
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
           setTimeout(typeNextChar, speed);
@@ -394,10 +406,11 @@
 
       typeNextChar();
     } else {
-      // Message normal sans typewriter
+      // Message normal — convertir \n en <br> (contenu echappe contre XSS)
+      const safeContent = escapeHtml(content).replace(/\n/g, '<br>');
       const messageHTML = `
         <div class="chatbot-message ${type}">
-          <div class="chatbot-message-content">${content}</div>
+          <div class="chatbot-message-content">${safeContent}</div>
         </div>
       `;
       messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
