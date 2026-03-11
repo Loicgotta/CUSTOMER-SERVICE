@@ -550,9 +550,29 @@
   padding: 0.75rem 1rem;
   border-radius: 16px;
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.6;
   word-wrap: break-word;
-  white-space: pre-wrap;
+}
+
+.chat-msg-bubble p {
+  margin: 0 0 0.5em 0;
+}
+
+.chat-msg-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-msg-bubble ul {
+  margin: 0.4em 0;
+  padding-left: 1.3em;
+}
+
+.chat-msg-bubble li {
+  margin-bottom: 0.25em;
+}
+
+.chat-msg-bubble strong {
+  font-weight: 600;
 }
 
 .chat-msg-user .chat-msg-bubble {

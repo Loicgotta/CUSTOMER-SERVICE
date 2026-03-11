@@ -81,10 +81,11 @@ Si aucun document n'est mentionne de maniere explicite, retourne VIDE.`
 
       context += `\n\nInstructions de mise en forme:
 - Structure tes reponses de maniere aeree et lisible
-- Utilise des sauts de ligne pour separer les idees ou les etapes differentes
-- Quand tu listes des elements, mets chaque element sur une nouvelle ligne
-- Evite les blocs de texte compacts, prefere des paragraphes courts separes par des lignes vides
-- N'utilise pas de markdown (pas de **, #, -, etc.), juste du texte simple avec des retours a la ligne
+- Separe les paragraphes par une ligne vide (double saut de ligne)
+- Quand tu enumeres des elements, utilise des listes a puces avec le tiret "- " en debut de ligne
+- Mets en gras avec **texte** les mots-cles ou informations importantes
+- Chaque idee ou etape doit etre sur sa propre ligne
+- Evite les longs blocs de texte compact
 
 Instructions de suivi:
 - Apres avoir aide un client et resolu son probleme, demande-lui: "Est-ce que je peux faire autre chose pour vous?"

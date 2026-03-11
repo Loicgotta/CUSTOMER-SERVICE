@@ -1,8 +1,52 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
 import Login from './Login';
 import Admin from './Admin';
 import './App.css';
+
+// Convertir le markdown basique en HTML securise
+function formatBotMessage(text) {
+  // Echapper le HTML
+  const div = document.createElement('div');
+  div.textContent = text;
+  let html = div.innerHTML;
+
+  // Gras : **texte** → <strong>texte</strong>
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // Separer en lignes pour traiter les listes
+  const lines = html.split('\n');
+  const result = [];
+  let inList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const bulletMatch = line.match(/^[-•]\s+(.+)/);
+
+    if (bulletMatch) {
+      if (!inList) {
+        result.push('<ul>');
+        inList = true;
+      }
+      result.push('<li>' + bulletMatch[1] + '</li>');
+    } else {
+      if (inList) {
+        result.push('</ul>');
+        inList = false;
+      }
+      if (line.trim() === '') {
+        result.push('<br>');
+      } else {
+        result.push('<p>' + line + '</p>');
+      }
+    }
+  }
+  if (inList) {
+    result.push('</ul>');
+  }
+
+  return result.join('');
+}
 
 const WIDGET_COLORS = [
   { name: 'Violet (par défaut)', value: '#667eea' },
@@ -401,10 +445,11 @@ function App() {
           <div className="chat-messages">
             {chatMessages.map((msg, i) => (
               <div key={i} className={`chat-msg chat-msg-${msg.role}${msg.isError ? ' chat-msg-error' : ''}`}>
-                <div className="chat-msg-bubble">
-                  {msg.content.split('\n').map((line, j, arr) => (
-                    <span key={j}>{line}{j < arr.length - 1 && <br />}</span>
-                  ))}
+                <div
+                  className="chat-msg-bubble"
+                  dangerouslySetInnerHTML={msg.role === 'bot' ? { __html: formatBotMessage(msg.content) } : undefined}
+                >
+                  {msg.role !== 'bot' ? msg.content : undefined}
                 </div>
               </div>
             ))}

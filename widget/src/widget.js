@@ -162,9 +162,29 @@
         max-width: 70%;
         padding: 0.75rem 1rem;
         border-radius: 12px;
-        line-height: 1.5;
+        line-height: 1.6;
         font-size: 0.9rem;
-        white-space: pre-wrap;
+      }
+
+      .chatbot-message-content p {
+        margin: 0 0 0.5em 0;
+      }
+
+      .chatbot-message-content p:last-child {
+        margin-bottom: 0;
+      }
+
+      .chatbot-message-content ul {
+        margin: 0.4em 0;
+        padding-left: 1.3em;
+      }
+
+      .chatbot-message-content li {
+        margin-bottom: 0.25em;
+      }
+
+      .chatbot-message-content strong {
+        font-weight: 600;
       }
 
       .chatbot-message.bot .chatbot-message-content {
@@ -368,12 +388,54 @@
     return div.innerHTML;
   }
 
+  // Convertir le markdown basique en HTML (securise)
+  function formatBotMessage(text) {
+    // Echapper le HTML d'abord
+    var html = escapeHtml(text);
+
+    // Gras : **texte** → <strong>texte</strong>
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // Separer en lignes pour traiter les listes
+    var lines = html.split('\n');
+    var result = [];
+    var inList = false;
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var bulletMatch = line.match(/^[-•]\s+(.+)/);
+
+      if (bulletMatch) {
+        if (!inList) {
+          result.push('<ul>');
+          inList = true;
+        }
+        result.push('<li>' + bulletMatch[1] + '</li>');
+      } else {
+        if (inList) {
+          result.push('</ul>');
+          inList = false;
+        }
+        if (line.trim() === '') {
+          result.push('<br>');
+        } else {
+          result.push('<p>' + line + '</p>');
+        }
+      }
+    }
+    if (inList) {
+      result.push('</ul>');
+    }
+
+    return result.join('');
+  }
+
   // Ajouter un message au chat
   function addMessage(content, type, useTypewriter = false) {
     const messagesContainer = document.getElementById('chatbot-messages');
 
     if (type === 'bot' && useTypewriter) {
-      // Créer le conteneur vide pour l'effet typewriter
+      // Creer le conteneur vide pour l'effet typewriter
       const messageHTML = `
         <div class="chatbot-message ${type}">
           <div class="chatbot-message-content" data-typewriter="true"></div>
@@ -381,12 +443,11 @@
       `;
       messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
 
-      // Récupérer le dernier message ajouté
-      const messages = messagesContainer.querySelectorAll('.chatbot-message.bot');
-      const lastMessage = messages[messages.length - 1];
+      const msgs = messagesContainer.querySelectorAll('.chatbot-message.bot');
+      const lastMessage = msgs[msgs.length - 1];
       const contentElement = lastMessage.querySelector('.chatbot-message-content');
 
-      // Effet typewriter avec support des sauts de ligne
+      // Typewriter : on tape le texte brut puis on remplace par le HTML formate a la fin
       let index = 0;
       const speed = 20;
 
@@ -401,16 +462,20 @@
           index++;
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
           setTimeout(typeNextChar, speed);
+        } else {
+          // Typewriter termine : remplacer par le HTML formate
+          contentElement.innerHTML = formatBotMessage(content);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
       }
 
       typeNextChar();
     } else {
-      // Message normal — convertir \n en <br> (contenu echappe contre XSS)
-      const safeContent = escapeHtml(content).replace(/\n/g, '<br>');
+      // Message sans typewriter
+      var formattedContent = (type === 'bot') ? formatBotMessage(content) : escapeHtml(content);
       const messageHTML = `
         <div class="chatbot-message ${type}">
-          <div class="chatbot-message-content">${safeContent}</div>
+          <div class="chatbot-message-content">${formattedContent}</div>
         </div>
       `;
       messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
