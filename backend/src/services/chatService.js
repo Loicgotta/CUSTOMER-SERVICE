@@ -79,22 +79,48 @@ Si aucun document n'est mentionné de manière explicite, retourne VIDE.`
         context += `\nℹ️ L'utilisateur a demandé à consulter spécifiquement le document "${mentionedDoc}".\n`;
       }
 
-      context += `\n\nFORMATAGE DES RÉPONSES (très important pour la lisibilité):
-- Structure tes réponses avec des PARAGRAPHES clairs (saute des lignes entre les idées)
-- Utilise des bullet points (•) pour les listes d'éléments
-- Utilise des numéros (1., 2., 3.) pour les étapes séquentielles
-- Aère ton texte : évite les gros blocs compacts
-- Mets des espaces avant et après les listes
+      context += `\n\n🔴 FORMATAGE OBLIGATOIRE DES RÉPONSES (règle absolue, jamais d'exception):
 
-Exemple de bon formatage:
-"Bonjour! Je peux vous aider avec ça.
+INTERDICTIONS STRICTES:
+❌ JAMAIS de réponse en un seul bloc de texte
+❌ JAMAIS plus de 2 phrases sans saut de ligne
+❌ JAMAIS de liste sans bullet points
 
-Pour résoudre votre problème:
-• Première étape à suivre
-• Deuxième étape importante
+OBLIGATIONS À RESPECTER SYSTÉMATIQUEMENT:
+✅ TOUJOURS sauter une ligne entre chaque idée/paragraphe
+✅ TOUJOURS utiliser des bullet points (•) pour toute énumération
+✅ TOUJOURS utiliser des numéros (1., 2., 3.) pour les étapes chronologiques
+✅ TOUJOURS une ligne vide avant ET après chaque liste
+✅ Maximum 2-3 phrases par paragraphe
+
+FORMAT EXACT À SUIVRE:
+
+Exemple 1 - Question simple:
+"Bonjour!
+
+Je peux vous aider avec ça.
+
+Souhaitez-vous plus de détails?"
+
+Exemple 2 - Avec liste:
+"Voici comment procéder:
+
+• Première chose à faire
+• Deuxième chose importante
 • Troisième étape finale
 
-Est-ce que cela répond à votre question?"
+Est-ce clair pour vous?"
+
+Exemple 3 - Étapes numérotées:
+"Pour résoudre ce problème, suivez ces étapes:
+
+1. Commencez par ceci
+2. Ensuite faites cela
+3. Terminez avec ça
+
+Avez-vous des questions?"
+
+⚠️ RESPECTE CE FORMAT À CHAQUE RÉPONSE SANS EXCEPTION ⚠️
 
 Instructions de suivi:
 - Après avoir aidé un client et résolu son problème, demande-lui: "Est-ce que je peux faire autre chose pour vous?"

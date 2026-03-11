@@ -164,14 +164,20 @@
         border-radius: 12px;
         line-height: 1.6;
         font-size: 0.9rem;
-        white-space: normal;
+        white-space: pre-wrap;
         word-wrap: break-word;
+        overflow-wrap: break-word;
       }
 
       .chatbot-message-content br {
         display: block;
         content: "";
-        margin-top: 0.5em;
+        margin-bottom: 0.8em;
+      }
+
+      .chatbot-message-content > span {
+        display: block;
+        margin: 0.3em 0;
       }
 
       .chatbot-message.bot .chatbot-message-content {
@@ -370,14 +376,26 @@
 
   // Formater le texte pour afficher les sauts de lignes et bullet points
   function formatMessage(text) {
+    if (!text) return '';
+
+    // Échapper les balises HTML dangereuses
+    let formatted = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Convertir les bullet points AVANT les sauts de lignes
+    formatted = formatted.replace(/^[•\-]\s(.+)$/gm, '###BULLET###$1');
+
+    // Convertir les listes numérotées AVANT les sauts de lignes
+    formatted = formatted.replace(/^(\d+)\.\s(.+)$/gm, '###NUMBER###$1. $2');
+
     // Remplacer les sauts de lignes par <br>
-    let formatted = text.replace(/\n/g, '<br>');
+    formatted = formatted.replace(/\n/g, '<br>');
 
-    // Convertir les bullet points (• ou - en début de ligne) en HTML
-    formatted = formatted.replace(/^[•\-]\s(.+)$/gm, '<span style="display: block; margin-left: 1em; text-indent: -1em;">• $1</span>');
-
-    // Convertir les listes numérotées (1., 2., etc.)
-    formatted = formatted.replace(/^(\d+)\.\s(.+)$/gm, '<span style="display: block; margin-left: 1em; text-indent: -1em;">$1. $2</span>');
+    // Remplacer les marqueurs par du HTML stylisé
+    formatted = formatted.replace(/###BULLET###(.+?)(<br>|$)/g, '<div style="margin: 0.2em 0; padding-left: 1.2em; text-indent: -1em;">• $1</div>');
+    formatted = formatted.replace(/###NUMBER###(.+?)(<br>|$)/g, '<div style="margin: 0.2em 0; padding-left: 1.2em; text-indent: -1em;">$1</div>');
 
     return formatted;
   }
