@@ -567,6 +567,33 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
+.chat-msg-bot .chat-msg-bubble p {
+  margin: 0 0 0.4em 0;
+}
+
+.chat-msg-bot .chat-msg-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-msg-bot .chat-msg-bubble ul {
+  margin: 0.3em 0;
+  padding-left: 1.2em;
+}
+
+.chat-msg-bot .chat-msg-bubble li {
+  margin-bottom: 0.2em;
+}
+
+.chat-msg-bot .chat-msg-bubble strong {
+  font-weight: 700;
+}
+
+.chat-msg-bot .chat-msg-bubble br {
+  display: block;
+  content: "";
+  margin-top: 0.3em;
+}
+
 .chat-msg-error .chat-msg-bubble {
   background: #fff5f5;
   color: #e53e3e;

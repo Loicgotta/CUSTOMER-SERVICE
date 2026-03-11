@@ -79,7 +79,15 @@ Si aucun document n'est mentionné de manière explicite, retourne VIDE.`
         context += `\nℹ️ L'utilisateur a demandé à consulter spécifiquement le document "${mentionedDoc}".\n`;
       }
 
-      context += `\n\nInstructions de suivi:
+      context += `\n\nINSTRUCTIONS DE FORMATAGE (à respecter dans chaque réponse):
+- Structure tes réponses de manière claire et aérée
+- Utilise des sauts de ligne pour séparer les idées
+- Utilise des listes à puces avec "- " ou "• " quand tu énumères plusieurs éléments, étapes ou options
+- Utilise **gras** pour mettre en valeur les mots-clés importants
+- Fais des paragraphes courts (2-3 phrases max par paragraphe)
+- Ne fais jamais un bloc de texte compact sans sauts de ligne
+
+Instructions de suivi:
 - Après avoir aidé un client et résolu son problème, demande-lui: "Est-ce que je peux faire autre chose pour vous?"
 - Si le client répond que tout est résolu (oui, c'est tout, non merci, etc.), demande-lui: "Comment avez-vous trouvé l'expérience?" pour collecter son feedback.
 

@@ -63,6 +63,53 @@ function App() {
   const messagesEndRef = useRef(null);
   const chatInputRef = useRef(null);
 
+  // Convertir markdown simple en HTML
+  const parseMarkdown = (text) => {
+    // Echapper le HTML
+    let escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // Gras **text**
+    escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // Italique *text*
+    escaped = escaped.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    // Decouper en lignes pour traiter les listes et paragraphes
+    const lines = escaped.split('\n');
+    let html = '';
+    let inList = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const bulletMatch = line.match(/^\s*[-•]\s+(.*)/);
+
+      if (bulletMatch) {
+        if (!inList) {
+          html += '<ul>';
+          inList = true;
+        }
+        html += '<li>' + bulletMatch[1] + '</li>';
+      } else {
+        if (inList) {
+          html += '</ul>';
+          inList = false;
+        }
+        const trimmed = line.trim();
+        if (trimmed === '') {
+          html += '<br>';
+        } else {
+          html += '<p>' + trimmed + '</p>';
+        }
+      }
+    }
+
+    if (inList) {
+      html += '</ul>';
+    }
+
+    return html;
+  };
+
   // Auto-resize du textarea du chat
   const autoResizeChatInput = () => {
     const textarea = chatInputRef.current;
@@ -401,7 +448,11 @@ function App() {
           <div className="chat-messages">
             {chatMessages.map((msg, i) => (
               <div key={i} className={`chat-msg chat-msg-${msg.role}${msg.isError ? ' chat-msg-error' : ''}`}>
-                <div className="chat-msg-bubble">{msg.content}</div>
+                {msg.role === 'bot' ? (
+                  <div className="chat-msg-bubble" dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.content) }} />
+                ) : (
+                  <div className="chat-msg-bubble">{msg.content}</div>
+                )}
               </div>
             ))}
             {chatLoading && (
