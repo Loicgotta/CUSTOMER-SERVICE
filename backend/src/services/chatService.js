@@ -79,7 +79,24 @@ Si aucun document n'est mentionné de manière explicite, retourne VIDE.`
         context += `\nℹ️ L'utilisateur a demandé à consulter spécifiquement le document "${mentionedDoc}".\n`;
       }
 
-      context += `\n\nInstructions de suivi:
+      context += `\n\nFORMATAGE DES RÉPONSES (très important pour la lisibilité):
+- Structure tes réponses avec des PARAGRAPHES clairs (saute des lignes entre les idées)
+- Utilise des bullet points (•) pour les listes d'éléments
+- Utilise des numéros (1., 2., 3.) pour les étapes séquentielles
+- Aère ton texte : évite les gros blocs compacts
+- Mets des espaces avant et après les listes
+
+Exemple de bon formatage:
+"Bonjour! Je peux vous aider avec ça.
+
+Pour résoudre votre problème:
+• Première étape à suivre
+• Deuxième étape importante
+• Troisième étape finale
+
+Est-ce que cela répond à votre question?"
+
+Instructions de suivi:
 - Après avoir aidé un client et résolu son problème, demande-lui: "Est-ce que je peux faire autre chose pour vous?"
 - Si le client répond que tout est résolu (oui, c'est tout, non merci, etc.), demande-lui: "Comment avez-vous trouvé l'expérience?" pour collecter son feedback.
 

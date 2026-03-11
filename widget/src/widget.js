@@ -162,8 +162,16 @@
         max-width: 70%;
         padding: 0.75rem 1rem;
         border-radius: 12px;
-        line-height: 1.5;
+        line-height: 1.6;
         font-size: 0.9rem;
+        white-space: normal;
+        word-wrap: break-word;
+      }
+
+      .chatbot-message-content br {
+        display: block;
+        content: "";
+        margin-top: 0.5em;
       }
 
       .chatbot-message.bot .chatbot-message-content {
@@ -360,6 +368,20 @@
     document.body.insertAdjacentHTML('beforeend', widgetHTML);
   }
 
+  // Formater le texte pour afficher les sauts de lignes et bullet points
+  function formatMessage(text) {
+    // Remplacer les sauts de lignes par <br>
+    let formatted = text.replace(/\n/g, '<br>');
+
+    // Convertir les bullet points (• ou - en début de ligne) en HTML
+    formatted = formatted.replace(/^[•\-]\s(.+)$/gm, '<span style="display: block; margin-left: 1em; text-indent: -1em;">• $1</span>');
+
+    // Convertir les listes numérotées (1., 2., etc.)
+    formatted = formatted.replace(/^(\d+)\.\s(.+)$/gm, '<span style="display: block; margin-left: 1em; text-indent: -1em;">$1. $2</span>');
+
+    return formatted;
+  }
+
   // Ajouter un message au chat
   function addMessage(content, type, useTypewriter = false) {
     const messagesContainer = document.getElementById('chatbot-messages');
@@ -378,13 +400,15 @@
       const lastMessage = messages[messages.length - 1];
       const contentElement = lastMessage.querySelector('.chatbot-message-content');
 
-      // Effet typewriter
+      // Effet typewriter avec formatage HTML
       let index = 0;
       const speed = 20; // millisecondes par caractère
 
       function typeNextChar() {
         if (index < content.length) {
-          contentElement.textContent += content.charAt(index);
+          // Ajouter caractère par caractère
+          const currentText = content.substring(0, index + 1);
+          contentElement.innerHTML = formatMessage(currentText);
           index++;
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
           setTimeout(typeNextChar, speed);
@@ -394,9 +418,10 @@
       typeNextChar();
     } else {
       // Message normal sans typewriter
+      const formattedContent = type === 'bot' ? formatMessage(content) : content.replace(/\n/g, '<br>');
       const messageHTML = `
         <div class="chatbot-message ${type}">
-          <div class="chatbot-message-content">${content}</div>
+          <div class="chatbot-message-content">${formattedContent}</div>
         </div>
       `;
       messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
