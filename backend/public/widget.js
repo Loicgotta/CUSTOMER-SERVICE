@@ -1,4 +1,4 @@
-(()=>{(function(){"use strict";let b=window.chatbotConfig||{agentId:1,apiUrl:"http://localhost:3001"},g=null,d=!1;function M(t,e){var n=Math.max(0,parseInt(t.slice(1,3),16)-e),o=Math.max(0,parseInt(t.slice(3,5),16)-e),i=Math.max(0,parseInt(t.slice(5,7),16)-e),a=function(h){var c=h.toString(16);return c.length===1?"0"+c:c};return"#"+a(n)+a(o)+a(i)}function f(t,e){return"rgba("+parseInt(t.slice(1,3),16)+","+parseInt(t.slice(3,5),16)+","+parseInt(t.slice(5,7),16)+","+e+")"}var s=b.widgetColor||"#667eea",L=M(s,40),r=(.299*parseInt(s.slice(1,3),16)+.587*parseInt(s.slice(3,5),16)+.114*parseInt(s.slice(5,7),16))/255>.5?"#2d3748":"#ffffff",I=f(s,.4),$=f(s,.6),l="linear-gradient(135deg, "+s+" 0%, "+L+" 100%)";function E(){return"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,function(t){let e=Math.random()*16|0;return(t==="x"?e:e&3|8).toString(16)})}function T(){let t=`
+(()=>{(function(){"use strict";let g=window.chatbotConfig||{agentId:1,apiUrl:"http://localhost:3001"},b=null,d=!1;function M(t,e){var n=Math.max(0,parseInt(t.slice(1,3),16)-e),o=Math.max(0,parseInt(t.slice(3,5),16)-e),i=Math.max(0,parseInt(t.slice(5,7),16)-e),a=function(h){var c=h.toString(16);return c.length===1?"0"+c:c};return"#"+a(n)+a(o)+a(i)}function f(t,e){return"rgba("+parseInt(t.slice(1,3),16)+","+parseInt(t.slice(3,5),16)+","+parseInt(t.slice(5,7),16)+","+e+")"}var s=g.widgetColor||"#667eea",L=M(s,40),r=(.299*parseInt(s.slice(1,3),16)+.587*parseInt(s.slice(3,5),16)+.114*parseInt(s.slice(5,7),16))/255>.5?"#2d3748":"#ffffff",H=f(s,.4),I=f(s,.6),l="linear-gradient(135deg, "+s+" 0%, "+L+" 100%)";function $(){return"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,function(t){let e=Math.random()*16|0;return(t==="x"?e:e&3|8).toString(16)})}function E(){let t=`
       #chatbot-widget {
         position: fixed;
         bottom: 20px;
@@ -14,7 +14,7 @@
         background: ${l};
         border: none;
         cursor: pointer;
-        box-shadow: 0 4px 20px ${I};
+        box-shadow: 0 4px 20px ${H};
         display: flex;
         align-items: center;
         justify-content: center;
@@ -23,7 +23,7 @@
 
       #chatbot-button:hover {
         transform: scale(1.1);
-        box-shadow: 0 6px 30px ${$};
+        box-shadow: 0 6px 30px ${I};
       }
 
       #chatbot-button svg {
@@ -119,7 +119,7 @@
         max-width: 70%;
         padding: 0.75rem 1rem;
         border-radius: 12px;
-        line-height: 1.6;
+        line-height: 1.8;
         font-size: 0.9rem;
         white-space: pre-wrap;
         word-wrap: break-word;
@@ -129,12 +129,25 @@
       .chatbot-message-content br {
         display: block;
         content: "";
-        margin-bottom: 0.8em;
+        margin-bottom: 0.5em;
       }
 
-      .chatbot-message-content > span {
+      .chatbot-message-content .paragraph-break {
         display: block;
-        margin: 0.3em 0;
+        height: 1.2em;
+      }
+
+      .chatbot-message-content > div {
+        margin: 0.5em 0;
+      }
+
+      .chatbot-message-content ul, .chatbot-message-content ol {
+        margin: 0.8em 0;
+        padding-left: 1.5em;
+      }
+
+      .chatbot-message-content li {
+        margin: 0.4em 0;
       }
 
       .chatbot-message.bot .chatbot-message-content {
@@ -283,7 +296,7 @@
           font-size: 0.85rem;
         }
       }
-    `,e=document.createElement("style");e.textContent=t,document.head.appendChild(e)}function H(){document.body.insertAdjacentHTML("beforeend",`
+    `,e=document.createElement("style");e.textContent=t,document.head.appendChild(e)}function T(){document.body.insertAdjacentHTML("beforeend",`
       <div id="chatbot-widget">
         <button id="chatbot-button" aria-label="Ouvrir le chat">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -317,11 +330,11 @@
           </div>
         </div>
       </div>
-    `)}function x(t){if(!t)return"";let e=t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");return e=e.replace(/^[•\-]\s(.+)$/gm,"###BULLET###$1"),e=e.replace(/^(\d+)\.\s(.+)$/gm,"###NUMBER###$1. $2"),e=e.replace(/\n/g,"<br>"),e=e.replace(/###BULLET###(.+?)(<br>|$)/g,'<div style="margin: 0.2em 0; padding-left: 1.2em; text-indent: -1em;">\u2022 $1</div>'),e=e.replace(/###NUMBER###(.+?)(<br>|$)/g,'<div style="margin: 0.2em 0; padding-left: 1.2em; text-indent: -1em;">$1</div>'),e}function p(t,e,n=!1){let o=document.getElementById("chatbot-messages");if(e==="bot"&&n){let k=function(){if(u<t.length){let S=t.substring(0,u+1);c.innerHTML=x(S),u++,o.scrollTop=o.scrollHeight,setTimeout(k,z)}},i=`
+    `)}function x(t){if(!t)return"";let e=t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");return e=e.replace(/\n\n+/g,"###PARAGRAPH###"),e=e.replace(/^[•\-]\s(.+)$/gm,"###BULLET###$1"),e=e.replace(/^(\d+)\.\s(.+)$/gm,"###NUMBER###$1. $2"),e=e.replace(/\n/g,"<br>"),e=e.replace(/###PARAGRAPH###/g,'<div class="paragraph-break"></div>'),e=e.replace(/###BULLET###(.+?)(<br>|<div|$)/g,'<div style="margin: 0.5em 0; padding-left: 1.5em; text-indent: -1.2em;">\u2022 $1</div>'),e=e.replace(/###NUMBER###(.+?)(<br>|<div|$)/g,'<div style="margin: 0.5em 0; padding-left: 1.5em; text-indent: -1.2em;">$1</div>'),e}function p(t,e,n=!1){let o=document.getElementById("chatbot-messages");if(e==="bot"&&n){let k=function(){if(u<t.length){let S=t.substring(0,u+1);c.innerHTML=x(S),u++,o.scrollTop=o.scrollHeight,setTimeout(k,z)}},i=`
         <div class="chatbot-message ${e}">
           <div class="chatbot-message-content" data-typewriter="true"></div>
         </div>
-      `;o.insertAdjacentHTML("beforeend",i);let a=o.querySelectorAll(".chatbot-message.bot"),c=a[a.length-1].querySelector(".chatbot-message-content"),u=0,z=20;k()}else{let i=e==="bot"?x(t):t.replace(/\n/g,"<br>"),a=`
+      `;o.insertAdjacentHTML("beforeend",i);let a=o.querySelectorAll(".chatbot-message.bot"),c=a[a.length-1].querySelector(".chatbot-message-content"),u=0,z=5;k()}else{let i=e==="bot"?x(t):t.replace(/\n/g,"<br>"),a=`
         <div class="chatbot-message ${e}">
           <div class="chatbot-message-content">${i}</div>
         </div>
@@ -333,4 +346,4 @@
           <span class="chatbot-loading"></span>
         </div>
       </div>
-    `),t.scrollTop=t.scrollHeight}function v(){let t=document.getElementById("chatbot-loading-message");t&&t.remove()}async function w(t){if(!t.trim())return;g||(g=E()),p(t,"user");let e=document.getElementById("chatbot-input"),n=document.getElementById("chatbot-send");e.disabled=!0,n.disabled=!0,B();try{let i=await(await fetch(`${b.apiUrl}/api/chat/message`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({agentId:b.agentId,sessionId:g,message:t})})).json();v(),p(i.response,"bot",!0)}catch(o){console.error("Erreur lors de l'envoi du message:",o),v(),p("D\xE9sol\xE9, une erreur s'est produite. Veuillez r\xE9essayer.","bot")}finally{e.disabled=!1,n.disabled=!1,e.focus()}}function m(t){t.style.height="auto";let e=Math.min(t.scrollHeight,200);t.style.height=e+"px",t.scrollHeight>200&&(t.scrollTop=t.scrollHeight)}function y(){T(),H();let t=document.getElementById("chatbot-button"),e=document.getElementById("chatbot-close"),n=document.getElementById("chatbot-window"),o=document.getElementById("chatbot-input"),i=document.getElementById("chatbot-send");t.addEventListener("click",()=>{d=!d,d?(n.classList.add("open"),o.focus()):n.classList.remove("open")}),e.addEventListener("click",()=>{d=!1,n.classList.remove("open")}),o.addEventListener("input",()=>{m(o)}),i.addEventListener("click",()=>{let a=o.value;o.value="",m(o),w(a)}),o.addEventListener("keypress",a=>{if(a.key==="Enter"&&!a.shiftKey){a.preventDefault();let h=o.value;o.value="",m(o),w(h)}})}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",y):y()})();})();
+    `),t.scrollTop=t.scrollHeight}function v(){let t=document.getElementById("chatbot-loading-message");t&&t.remove()}async function w(t){if(!t.trim())return;b||(b=$()),p(t,"user");let e=document.getElementById("chatbot-input"),n=document.getElementById("chatbot-send");e.disabled=!0,n.disabled=!0,B();try{let i=await(await fetch(`${g.apiUrl}/api/chat/message`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({agentId:g.agentId,sessionId:b,message:t})})).json();v(),p(i.response,"bot",!0)}catch(o){console.error("Erreur lors de l'envoi du message:",o),v(),p("D\xE9sol\xE9, une erreur s'est produite. Veuillez r\xE9essayer.","bot")}finally{e.disabled=!1,n.disabled=!1,e.focus()}}function m(t){t.style.height="auto";let e=Math.min(t.scrollHeight,200);t.style.height=e+"px",t.scrollHeight>200&&(t.scrollTop=t.scrollHeight)}function y(){E(),T();let t=document.getElementById("chatbot-button"),e=document.getElementById("chatbot-close"),n=document.getElementById("chatbot-window"),o=document.getElementById("chatbot-input"),i=document.getElementById("chatbot-send");t.addEventListener("click",()=>{d=!d,d?(n.classList.add("open"),o.focus()):n.classList.remove("open")}),e.addEventListener("click",()=>{d=!1,n.classList.remove("open")}),o.addEventListener("input",()=>{m(o)}),i.addEventListener("click",()=>{let a=o.value;o.value="",m(o),w(a)}),o.addEventListener("keypress",a=>{if(a.key==="Enter"&&!a.shiftKey){a.preventDefault();let h=o.value;o.value="",m(o),w(h)}})}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",y):y()})();})();

@@ -162,7 +162,7 @@
         max-width: 70%;
         padding: 0.75rem 1rem;
         border-radius: 12px;
-        line-height: 1.6;
+        line-height: 1.8;
         font-size: 0.9rem;
         white-space: pre-wrap;
         word-wrap: break-word;
@@ -172,12 +172,25 @@
       .chatbot-message-content br {
         display: block;
         content: "";
-        margin-bottom: 0.8em;
+        margin-bottom: 0.5em;
       }
 
-      .chatbot-message-content > span {
+      .chatbot-message-content .paragraph-break {
         display: block;
-        margin: 0.3em 0;
+        height: 1.2em;
+      }
+
+      .chatbot-message-content > div {
+        margin: 0.5em 0;
+      }
+
+      .chatbot-message-content ul, .chatbot-message-content ol {
+        margin: 0.8em 0;
+        padding-left: 1.5em;
+      }
+
+      .chatbot-message-content li {
+        margin: 0.4em 0;
       }
 
       .chatbot-message.bot .chatbot-message-content {
@@ -384,18 +397,24 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
+    // Convertir les doubles sauts de ligne en marqueurs de paragraphe
+    formatted = formatted.replace(/\n\n+/g, '###PARAGRAPH###');
+
     // Convertir les bullet points AVANT les sauts de lignes
     formatted = formatted.replace(/^[•\-]\s(.+)$/gm, '###BULLET###$1');
 
     // Convertir les listes numérotées AVANT les sauts de lignes
     formatted = formatted.replace(/^(\d+)\.\s(.+)$/gm, '###NUMBER###$1. $2');
 
-    // Remplacer les sauts de lignes par <br>
+    // Remplacer les sauts de lignes simples par <br>
     formatted = formatted.replace(/\n/g, '<br>');
 
-    // Remplacer les marqueurs par du HTML stylisé
-    formatted = formatted.replace(/###BULLET###(.+?)(<br>|$)/g, '<div style="margin: 0.2em 0; padding-left: 1.2em; text-indent: -1em;">• $1</div>');
-    formatted = formatted.replace(/###NUMBER###(.+?)(<br>|$)/g, '<div style="margin: 0.2em 0; padding-left: 1.2em; text-indent: -1em;">$1</div>');
+    // Remplacer les marqueurs de paragraphe par des espacements larges
+    formatted = formatted.replace(/###PARAGRAPH###/g, '<div class="paragraph-break"></div>');
+
+    // Remplacer les marqueurs par du HTML stylisé avec plus d'espacement
+    formatted = formatted.replace(/###BULLET###(.+?)(<br>|<div|$)/g, '<div style="margin: 0.5em 0; padding-left: 1.5em; text-indent: -1.2em;">• $1</div>');
+    formatted = formatted.replace(/###NUMBER###(.+?)(<br>|<div|$)/g, '<div style="margin: 0.5em 0; padding-left: 1.5em; text-indent: -1.2em;">$1</div>');
 
     return formatted;
   }
@@ -420,7 +439,7 @@
 
       // Effet typewriter avec formatage HTML
       let index = 0;
-      const speed = 20; // millisecondes par caractère
+      const speed = 5; // millisecondes par caractère (accéléré)
 
       function typeNextChar() {
         if (index < content.length) {
