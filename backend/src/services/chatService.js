@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import Agent from '../models/Agent.js';
 import Conversation from '../models/Conversation.js';
 import RAGService from './ragService.js';
+import WebNavigationService from './webNavigationService.js';
 import Embedding from '../models/Embedding.js';
 import Logger from '../utils/logger.js';
 import dotenv from 'dotenv';
@@ -54,6 +55,24 @@ Si aucun document n'est mentionné de manière explicite, retourne VIDE.`
       const agent = Agent.findById(agentId);
       if (!agent) {
         throw new Error('Agent non trouvé');
+      }
+
+      // 🌐 NOUVEAU: Détecter si c'est une demande de navigation web
+      const webNavigationResult = await WebNavigationService.processWebNavigationRequest(userMessage, agentId);
+
+      if (webNavigationResult && webNavigationResult.handled) {
+        // La demande web a été traitée, sauvegarder et retourner
+        const botResponse = webNavigationResult.response;
+
+        Conversation.create({
+          agentId,
+          sessionId,
+          userMessage,
+          botResponse
+        });
+
+        Logger.info(`Navigation web traitée - Agent: ${agentId}, Session: ${sessionId}`);
+        return botResponse;
       }
 
       // Détecter si un document spécifique est mentionné

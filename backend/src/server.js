@@ -12,6 +12,7 @@ import docsRouter from './routes/docs.js';
 import authRouter from './routes/auth.js';
 import adminRouter from './routes/admin.js';
 import promptRouter from './routes/prompt.js';
+import webRouter from './routes/web.js';
 import ReportService from './services/reportService.js';
 import Logger from './utils/logger.js';
 import { authenticateToken, requireAdmin } from './middleware/auth.js';
@@ -118,6 +119,7 @@ app.use('/api/chat', cors({ origin: '*' }), chatRouter); // Public (widget sur s
 app.use('/api/docs', authenticateToken, docsRouter); // Protégé
 app.use('/api/admin', authenticateToken, requireAdmin, adminRouter); // Admin uniquement
 app.use('/api/prompt', authenticateToken, promptRouter); // Amélioration de prompt
+app.use('/api/web', authenticateToken, webRouter); // Web scraping et navigation
 
 // Route pour envoyer manuellement un rapport (protégée)
 app.post('/api/reports/send/:agentId', authenticateToken, async (req, res) => {

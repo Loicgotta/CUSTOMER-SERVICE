@@ -397,6 +397,13 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
+    // 🌐 NOUVEAU: Convertir les liens markdown [texte](url) en liens HTML cliquables
+    // On le fait AVANT l'échappement des autres caractères pour préserver les URLs
+    formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, linkText, url) => {
+      // Protéger le lien avec un marqueur temporaire
+      return `###LINK###${linkText}###URL###${url}###ENDLINK###`;
+    });
+
     // Convertir les doubles sauts de ligne en marqueurs de paragraphe
     formatted = formatted.replace(/\n\n+/g, '###PARAGRAPH###');
 
@@ -415,6 +422,15 @@
     // Remplacer les marqueurs par du HTML stylisé avec plus d'espacement
     formatted = formatted.replace(/###BULLET###(.+?)(<br>|<div|$)/g, '<div style="margin: 0.5em 0; padding-left: 1.5em; text-indent: -1.2em;">• $1</div>');
     formatted = formatted.replace(/###NUMBER###(.+?)(<br>|<div|$)/g, '<div style="margin: 0.5em 0; padding-left: 1.5em; text-indent: -1.2em;">$1</div>');
+
+    // 🌐 NOUVEAU: Convertir les marqueurs de liens en vrais liens HTML
+    formatted = formatted.replace(/###LINK###([^#]+)###URL###([^#]+)###ENDLINK###/g, (match, linkText, url) => {
+      // Décoder les entités HTML dans l'URL
+      const decodedUrl = url.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+
+      // Créer un lien cliquable avec style
+      return `<a href="${decodedUrl}" target="_blank" rel="noopener noreferrer" style="color: ${widgetColor}; text-decoration: underline; font-weight: 500;">${linkText}</a>`;
+    });
 
     return formatted;
   }
